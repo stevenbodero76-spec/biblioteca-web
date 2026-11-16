@@ -9,7 +9,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class BookController extends Controller
@@ -198,7 +200,12 @@ class BookController extends Controller
             return back()->with('error', 'No se puede eliminar esta obra porque tiene historial de préstamos o ventas asociadas.');
         }
 
+        $portada = $book->portada_url;
+        $pdf = $book->archivo_pdf;
         $book->delete();
+
+        $this->eliminarArchivoPublicoSiLocal($portada);
+        $this->eliminarArchivoPublicoSiLocal($pdf);
 
         return redirect()
             ->route('books.index')
@@ -214,6 +221,11 @@ class BookController extends Controller
                 'encontrado' => false,
                 'mensaje' => 'Ingresa un ISBN válido (10 o 13 dígitos).',
             ], 422);
+        }
+
+        $cacheKey = "openlibrary_isbn_{$cleanIsbn}";
+        if (Cache::has($cacheKey)) {
+            return response()->json(Cache::get($cacheKey));
         }
 
         try {
@@ -252,7 +264,7 @@ class BookController extends Controller
                 ?? $payload['cover']['medium']
                 ?? "https://covers.openlibrary.org/b/isbn/{$cleanIsbn}-L.jpg";
 
-            return response()->json([
+            $resultado = [
                 'encontrado' => true,
                 'titulo' => $payload['title'] ?? '',
                 'autor' => $autores,
@@ -260,7 +272,11 @@ class BookController extends Controller
                 'anio_publicacion' => $anio,
                 'portada_url' => $portada,
                 'sinopsis' => $payload['notes'] ?? ($payload['subtitle'] ?? ''),
-            ]);
+            ];
+
+            Cache::put($cacheKey, $resultado, now()->addDays(7));
+
+            return response()->json($resultado);
         } catch (\Throwable) {
             return response()->json([
                 'encontrado' => false,
@@ -276,6 +292,9 @@ class BookController extends Controller
         if ($request->hasFile('portada_file')) {
             $path = $request->file('portada_file')->store('covers', 'public');
             $datos['portada_url'] = '/storage/' . ltrim($path, '/');
+            if ($book) {
+                $this->eliminarArchivoPublicoSiLocal($book->portada_url);
+            }
         } elseif ($book && empty($datos['portada_url'])) {
             $datos['portada_url'] = $book->portada_url;
         }
@@ -283,10 +302,25 @@ class BookController extends Controller
         if ($request->hasFile('pdf_file')) {
             $path = $request->file('pdf_file')->store('pdfs', 'public');
             $datos['archivo_pdf'] = '/storage/' . ltrim($path, '/');
+            if ($book) {
+                $this->eliminarArchivoPublicoSiLocal($book->archivo_pdf);
+            }
         } elseif ($book && empty($datos['archivo_pdf'])) {
             $datos['archivo_pdf'] = $book->archivo_pdf;
         }
 
         return $datos;
+    }
+
+    private function eliminarArchivoPublicoSiLocal(?string $ruta): void
+    {
+        if (! $ruta || ! str_starts_with($ruta, '/storage/')) {
+            return;
+        }
+
+        $relativo = ltrim(substr($ruta, strlen('/storage/')), '/');
+        if ($relativo !== '' && ! str_contains($relativo, '..')) {
+            Storage::disk('public')->delete($relativo);
+        }
     }
 }
