@@ -4,9 +4,14 @@ namespace Database\Seeders;
 
 use App\Models\Book;
 use App\Models\Category;
+use App\Models\Complaint;
+use App\Models\Favorite;
+use App\Models\KarmaMovement;
 use App\Models\Loan;
 use App\Models\Reader;
+use App\Models\Review;
 use App\Models\User;
+use App\Models\Waitlist;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -14,22 +19,15 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Cuentas comerciales de administración y atención al cliente
+        // 1. Cuentas principales (2 Roles: Administrador y Cliente)
         $admin = User::create([
-            'name' => 'Director Ejecutivo · NovaEther',
+            'name' => 'Administrador General · NovaEther',
             'email' => 'admin@novaether.com',
             'rol' => 'admin',
             'password' => Hash::make('12345678'),
         ]);
 
-        $bibliotecario = User::create([
-            'name' => 'Especialista de Catálogo & Reservas',
-            'email' => 'staff@novaether.com',
-            'rol' => 'bibliotecario',
-            'password' => Hash::make('12345678'),
-        ]);
-
-        User::create([
+        $cliente = User::create([
             'name' => 'Carlos Alberto Mendoza Ríos',
             'email' => 'cliente@novaether.com',
             'rol' => 'cliente',
@@ -370,18 +368,24 @@ class DatabaseSeeder extends Seeder
         ];
 
         $librosPorIsbn = [];
-        foreach ($librosData as $libro) {
+        foreach ($librosData as $idx => $libro) {
+            $esManga = $libro['category_id'] === $categorias['Cómics, Manga y Novela Gráfica']->id;
+            $esTech = $libro['category_id'] === $categorias['Tecnología, IA y Desarrollo (Tech)']->id;
+
+            $libro['precio_alquiler'] = $esManga ? 6.50 : ($esTech ? 12.00 : 8.50 + ($idx % 3));
+            $libro['precio_venta'] = $esManga ? 39.90 : ($esTech ? 115.00 : 54.90 + (($idx % 4) * 5));
+
             $creado = Book::create($libro);
             $librosPorIsbn[$libro['isbn']] = $creado;
         }
 
         // 4. Clientes / Miembros Suscriptores de la Plataforma Comercial
         $lectoresData = [
-            ['dni_codigo' => '72849102', 'nombres' => 'Carlos Alberto', 'apellidos' => 'Mendoza Ríos', 'email' => 'cliente@novaether.com', 'telefono' => '987654321', 'tipo' => 'estudiante', 'estado' => 'activo'],
-            ['dni_codigo' => '74102938', 'nombres' => 'Lucía Fernanda', 'apellidos' => 'Quispe Salazar', 'email' => 'lucia.quispe@outlook.com', 'telefono' => '912345678', 'tipo' => 'docente', 'estado' => 'activo'],
-            ['dni_codigo' => '41928374', 'nombres' => 'Roberto', 'apellidos' => 'Paredes Vargas', 'email' => 'rparedes@novaether.club', 'telefono' => '998877665', 'tipo' => 'docente', 'estado' => 'activo'],
-            ['dni_codigo' => '76543210', 'nombres' => 'Andrea Valeria', 'apellidos' => 'Rojas Castillo', 'email' => 'andrea.rojas@gmail.com', 'telefono' => '955443322', 'tipo' => 'publico', 'estado' => 'activo'],
-            ['dni_codigo' => '70918273', 'nombres' => 'Diego Alejandro', 'apellidos' => 'Torres Huamán', 'email' => 'diego.torres@hotmail.com', 'telefono' => '944332211', 'tipo' => 'publico', 'estado' => 'suspendido'],
+            ['user_id' => $cliente->id, 'dni_codigo' => '72849102', 'nombres' => 'Carlos Alberto', 'apellidos' => 'Mendoza Ríos', 'email' => 'cliente@novaether.com', 'telefono' => '987654321', 'tipo' => 'estudiante', 'plan_suscripcion' => 'pro', 'plan_vence_at' => now()->addMonths(2)->toDateString(), 'estado' => 'activo', 'puntos_karma' => 125],
+            ['dni_codigo' => '74102938', 'nombres' => 'Lucía Fernanda', 'apellidos' => 'Quispe Salazar', 'email' => 'lucia.quispe@outlook.com', 'telefono' => '912345678', 'tipo' => 'docente', 'plan_suscripcion' => 'estudiante', 'plan_vence_at' => now()->addMonth()->toDateString(), 'estado' => 'activo', 'puntos_karma' => 210],
+            ['dni_codigo' => '41928374', 'nombres' => 'Roberto', 'apellidos' => 'Paredes Vargas', 'email' => 'rparedes@novaether.club', 'telefono' => '998877665', 'tipo' => 'docente', 'plan_suscripcion' => 'free', 'estado' => 'activo', 'puntos_karma' => 90],
+            ['dni_codigo' => '76543210', 'nombres' => 'Andrea Valeria', 'apellidos' => 'Rojas Castillo', 'email' => 'andrea.rojas@gmail.com', 'telefono' => '955443322', 'tipo' => 'publico', 'plan_suscripcion' => 'pro', 'plan_vence_at' => now()->addMonth()->toDateString(), 'estado' => 'activo', 'puntos_karma' => 75],
+            ['dni_codigo' => '70918273', 'nombres' => 'Diego Alejandro', 'apellidos' => 'Torres Huamán', 'email' => 'diego.torres@hotmail.com', 'telefono' => '944332211', 'tipo' => 'publico', 'plan_suscripcion' => 'free', 'estado' => 'suspendido', 'puntos_karma' => 10],
         ];
 
         $lectores = [];
@@ -393,12 +397,17 @@ class DatabaseSeeder extends Seeder
         Loan::create([
             'book_id' => $librosPorIsbn['978-1569319017']->id, // One Piece Vol. 1
             'reader_id' => $lectores[0]->id,
-            'user_id' => $bibliotecario->id,
+            'user_id' => $admin->id,
             'fecha_prestamo' => now()->subDays(3)->toDateString(),
             'fecha_devolucion_esperada' => now()->addDays(4)->toDateString(),
             'fecha_devolucion_real' => null,
             'estado' => 'prestado',
-            'observaciones' => 'Entrega de edición coleccionista + acceso a lectura digital HD.',
+            'metodo_pago' => 'yape_plin',
+            'monto' => 6.50,
+            'estado_pago' => 'pagado',
+            'codigo_operacion' => 'YP-492018',
+            'fecha_pago' => now()->subDays(3),
+            'observaciones' => 'Entrega de edición coleccionista sellada + acceso a lectura digital HD.',
         ]);
 
         Loan::create([
@@ -409,28 +418,40 @@ class DatabaseSeeder extends Seeder
             'fecha_devolucion_esperada' => now()->subDays(2)->toDateString(),
             'fecha_devolucion_real' => null,
             'estado' => 'vencido',
+            'metodo_pago' => 'membresia',
+            'monto' => 0.00,
+            'estado_pago' => 'pagado',
+            'fecha_pago' => now()->subDays(10),
             'observaciones' => 'Última unidad en circulación. Stock actual agotado (0 disponibles).',
         ]);
 
         Loan::create([
             'book_id' => $librosPorIsbn['978-1612620244']->id, // Attack on Titan Vol. 1 (stock 0)
             'reader_id' => $lectores[2]->id,
-            'user_id' => $bibliotecario->id,
+            'user_id' => $admin->id,
             'fecha_prestamo' => now()->subDays(5)->toDateString(),
             'fecha_devolucion_esperada' => now()->addDays(2)->toDateString(),
             'fecha_devolucion_real' => null,
             'estado' => 'prestado',
-            'observaciones' => 'Reserva exclusiva de tomo manga.',
+            'metodo_pago' => 'mostrador',
+            'monto' => 6.50,
+            'estado_pago' => 'pendiente',
+            'expira_pago_at' => now()->addHours(18),
+            'observaciones' => 'Reserva exclusiva de tomo manga pendiente de cobro en tienda.',
         ]);
 
         Loan::create([
             'book_id' => $librosPorIsbn['978-0132350884']->id, // Clean Code
             'reader_id' => $lectores[3]->id,
-            'user_id' => $bibliotecario->id,
+            'user_id' => $admin->id,
             'fecha_prestamo' => now()->subDays(1)->toDateString(),
             'fecha_devolucion_esperada' => now()->addDays(6)->toDateString(),
             'fecha_devolucion_real' => null,
             'estado' => 'prestado',
+            'metodo_pago' => 'membresia',
+            'monto' => 0.00,
+            'estado_pago' => 'pagado',
+            'fecha_pago' => now()->subDays(1),
             'observaciones' => 'Licencia Cloud activada para cliente.',
         ]);
 
@@ -442,7 +463,105 @@ class DatabaseSeeder extends Seeder
             'fecha_devolucion_esperada' => now()->subDays(5)->toDateString(),
             'fecha_devolucion_real' => now()->subDays(6)->toDateString(),
             'estado' => 'devuelto',
-            'observaciones' => 'Devolución completada con éxito.',
+            'metodo_pago' => 'membresia',
+            'monto' => 0.00,
+            'estado_pago' => 'pagado',
+            'fecha_pago' => now()->subDays(12),
+            'observaciones' => 'Devolución puntual completada (+25 Puntos Nova).',
+        ]);
+
+        // 6. Lista de espera de ejemplo para libro sin stock
+        Waitlist::create([
+            'book_id' => $librosPorIsbn['978-8420412146']->id, // La ciudad y los perros (stock 0)
+            'reader_id' => $lectores[0]->id,
+            'estado' => 'en_espera',
+        ]);
+
+        // 7. Reseñas reales variadas (con protección anti-spoilers)
+        Review::create([
+            'book_id' => $librosPorIsbn['978-1569319017']->id, // One Piece Vol. 1
+            'user_id' => $cliente->id,
+            'rating' => 5,
+            'comentario' => 'Tomo impecable, llegó en bolsa coleccionista sin una sola esquina doblada. El inicio de la aventura de Luffy es inolvidable.',
+            'es_spoiler' => false,
+        ]);
+        Review::create([
+            'book_id' => $librosPorIsbn['978-1569319017']->id,
+            'user_id' => $admin->id,
+            'rating' => 5,
+            'comentario' => 'La escena donde Shanks entrega el sombrero de paja a Luffy sigue siendo de los mejores momentos del manga shonen.',
+            'es_spoiler' => true,
+        ]);
+        Review::create([
+            'book_id' => $librosPorIsbn['978-1401207526']->id, // Batman Año Uno
+            'user_id' => $cliente->id,
+            'rating' => 5,
+            'comentario' => 'Arte noir increíble y guion brutal de Frank Miller.',
+            'es_spoiler' => false,
+        ]);
+        Review::create([
+            'book_id' => $librosPorIsbn['978-1612620244']->id, // Attack on Titan Vol. 1
+            'user_id' => $admin->id,
+            'rating' => 5,
+            'comentario' => 'El giro cuando aparece el Titán Colosal frente a la Muralla María te deja helado desde el capítulo 1.',
+            'es_spoiler' => true,
+        ]);
+        Review::create([
+            'book_id' => $librosPorIsbn['978-0132350884']->id, // Clean Code
+            'user_id' => $admin->id,
+            'rating' => 5,
+            'comentario' => 'Lectura obligatoria si programas en Laravel o cualquier lenguaje moderno.',
+            'es_spoiler' => false,
+        ]);
+        Review::create([
+            'book_id' => $librosPorIsbn['978-0132350884']->id,
+            'user_id' => $cliente->id,
+            'rating' => 4,
+            'comentario' => 'Excelente para mejorar la calidad del código, aunque algunos ejemplos en Java requieren práctica.',
+            'es_spoiler' => false,
+        ]);
+        Review::create([
+            'book_id' => $librosPorIsbn['978-0441172719']->id, // Dune
+            'user_id' => $admin->id,
+            'rating' => 4,
+            'comentario' => 'Construcción de mundo espectacular, arranca lento pero atrapa por completo.',
+            'es_spoiler' => false,
+        ]);
+        Review::create([
+            'book_id' => $librosPorIsbn['978-0735211292']->id, // Hábitos Atómicos
+            'user_id' => $cliente->id,
+            'rating' => 5,
+            'comentario' => 'Súper práctico para aplicar desde el día 1 en productividad y estudio.',
+            'es_spoiler' => false,
+        ]);
+
+        // 8. Favoritos iniciales en Mi Estantería del cliente demo
+        Favorite::create(['user_id' => $cliente->id, 'book_id' => $librosPorIsbn['978-1569319017']->id]);
+        Favorite::create(['user_id' => $cliente->id, 'book_id' => $librosPorIsbn['978-0132350884']->id]);
+        Favorite::create(['user_id' => $cliente->id, 'book_id' => $librosPorIsbn['978-0441172719']->id]);
+
+        // 9. Historial de Karma e Hoja de Reclamación de ejemplo para consola Admin
+        KarmaMovement::create([
+            'reader_id' => $lectores[0]->id,
+            'puntos' => 50,
+            'motivo' => 'Bono inicial de bienvenida NOVAETHER™',
+        ]);
+        KarmaMovement::create([
+            'reader_id' => $lectores[0]->id,
+            'puntos' => 25,
+            'motivo' => 'Devolución puntual de «Padre Rico, Padre Pobre»',
+        ]);
+
+        Complaint::create([
+            'codigo_reclamo' => 'LRC-' . date('Y') . '-DEMO01',
+            'nombre_completo' => 'Andrea Valeria Rojas Castillo',
+            'dni_ce' => '76543210',
+            'email' => 'andrea.rojas@gmail.com',
+            'telefono' => '955443322',
+            'tipo' => 'reclamo',
+            'detalle' => 'El código de descuento de campaña no se aplicó al intentar reservar por segunda vez.',
+            'pedido_consumidor' => 'Revisión del cálculo de descuento en tienda.',
+            'estado' => 'registrado',
         ]);
     }
 }

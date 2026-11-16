@@ -23,7 +23,17 @@ class Book extends Model
         'ubicacion_estante',
         'stock_total',
         'stock_disponible',
+        'precio_alquiler',
+        'precio_venta',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'precio_alquiler' => 'decimal:2',
+            'precio_venta' => 'decimal:2',
+        ];
+    }
 
     public function category(): BelongsTo
     {
@@ -35,15 +45,84 @@ class Book extends Model
         return $this->hasMany(Loan::class);
     }
 
+    public function waitlists(): HasMany
+    {
+        return $this->hasMany(Waitlist::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(Favorite::class);
+    }
+
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
     public function estaDisponible(): bool
     {
         return $this->stock_disponible > 0;
     }
 
+    public function prestamosActivosCount(): int
+    {
+        return $this->loans()
+            ->whereIn('estado', ['prestado', 'vencido'])
+            ->where('estado_pago', '!=', 'anulado')
+            ->count();
+    }
+
+    /**
+     * Repone ejemplares al catálogo bajo bloqueo de fila y notifica a la cola de espera.
+     */
+    public function restaurarStockYNotificar(int $cantidad = 1, bool $incluirStockTotal = false): void
+    {
+        /** @var self $locked */
+        $locked = self::lockForUpdate()->findOrFail($this->id);
+
+        if ($incluirStockTotal) {
+            $locked->increment('stock_total', $cantidad);
+            $locked->increment('stock_disponible', $cantidad);
+        } else {
+            $incremento = min($cantidad, max(0, (int) $locked->stock_total - (int) $locked->stock_disponible));
+            if ($incremento > 0) {
+                $locked->increment('stock_disponible', $incremento);
+            }
+        }
+
+        $siguienteEnEspera = Waitlist::where('book_id', $locked->id)
+            ->where('estado', 'en_espera')
+            ->orderBy('id')
+            ->first();
+
+        if ($siguienteEnEspera && $locked->fresh()->stock_disponible > 0) {
+            $siguienteEnEspera->update([
+                'estado' => 'notificado',
+                'notificado_at' => now(),
+            ]);
+        }
+    }
+
+    public function esPdfEmbeddable(): bool
+    {
+        if (! $this->archivo_pdf) {
+            return false;
+        }
+
+        return str_starts_with($this->archivo_pdf, '/storage/')
+            || str_ends_with(strtolower(parse_url($this->archivo_pdf, PHP_URL_PATH) ?? ''), '.pdf');
+    }
+
     public function scopeFiltro(Builder $query, array $filtros): Builder
     {
         return $query
-            ->when($filtros['buscar'] ?? null, function (Builder $q, string $buscar) {
+            ->when(trim((string) ($filtros['buscar'] ?? '')), function (Builder $q, string $buscar) {
                 $q->where(function (Builder $sub) use ($buscar) {
                     $sub->where('titulo', 'like', "%{$buscar}%")
                         ->orWhere('autor', 'like', "%{$buscar}%")
@@ -61,5 +140,14 @@ class Book extends Model
                 }
             });
     }
-}
 
+    public function scopeOrdenar(Builder $query, ?string $orden): Builder
+    {
+        return match ($orden) {
+            'mejor_valorados' => $query->orderByDesc('reviews_avg_rating')->orderByDesc('reviews_count')->orderByDesc('id'),
+            'menor_precio' => $query->orderBy('precio_alquiler')->orderByDesc('id'),
+            'mayor_stock' => $query->orderByDesc('stock_disponible')->orderByDesc('id'),
+            default => $query->orderByDesc('id'),
+        };
+    }
+}

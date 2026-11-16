@@ -13,12 +13,13 @@ class RoleMiddleware
         $user = $request->user();
 
         if (! $user || ! in_array($user->rol, $roles, true)) {
+            $destino = ($user && $user->esAdmin()) ? 'dashboard' : 'home';
+
             return redirect()
-                ->route('dashboard')
-                ->with('error', 'Acceso restringido: tu rol (' . ($user->rol ?? 'invitado') . ') no tiene permiso para realizar esta acción.');
+                ->route($destino)
+                ->with('error', 'Acceso restringido: tu rol (' . ($user->rol ?? 'invitado') . ') no tiene permiso para acceder a esta sección.');
         }
 
         return $next($request);
     }
 }
-

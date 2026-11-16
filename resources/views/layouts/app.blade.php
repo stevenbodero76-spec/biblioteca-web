@@ -2,171 +2,277 @@
 <html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#090D16">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.webmanifest">
     <title>@yield('title', 'NOVAETHER™ · Books, Manga & Digital Vault')</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @yield('meta')
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #070B14;
-            background-image:
-                radial-gradient(at 12% 8%, rgba(245, 158, 11, 0.10) 0px, transparent 45%),
-                radial-gradient(at 88% 15%, rgba(6, 182, 212, 0.10) 0px, transparent 45%),
-                radial-gradient(at 50% 85%, rgba(244, 63, 94, 0.08) 0px, transparent 50%);
-            background-attachment: fixed;
-        }
-        .font-serif-editorial { font-family: 'Playfair Display', serif; }
-        .book-card-3d {
-            transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .book-card-3d:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 25px 50px -12px rgba(245, 158, 11, 0.18);
-        }
-        .cover-shine {
-            transition: transform 0.4s ease;
-        }
-        .book-card-3d:hover .cover-shine {
-            transform: scale(1.08) rotate(-1.2deg);
-        }
-    </style>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="text-slate-100 min-h-screen flex flex-col selection:bg-amber-400 selection:text-slate-950">
 
     <!-- Cintillo comercial superior -->
-    <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-slate-950 text-xs font-black py-2 px-4 text-center tracking-wide shadow-md">
-        🔥 NOVAETHER™ STORE & DIGITAL VAULT · Crea tu cuenta gratis en 10 segundos y accede a Libros, Cómics, Manga y Lectura Cloud HD
+    <div class="no-print bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 text-slate-950 text-xs font-extrabold py-2 px-4 text-center tracking-wide shadow-sm">
+        ⚡ NOVAETHER™ PERÚ · Compra Directa y Alquiler en Soles · Yape / Plin / Tarjeta + Tickets QR + Canje de Puntos Nova
     </div>
 
     <!-- Barra de navegación principal -->
-    <header class="bg-[#070B14]/90 backdrop-blur-xl text-white sticky top-0 z-40 border-b border-slate-800/90 shadow-2xl">
+    <header class="no-print bg-[#090D16]/95 backdrop-blur-xl text-white sticky top-0 z-40 border-b border-slate-800 shadow-2xl">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-20 gap-4">
-                <!-- Logo Comercial Vectorial Único (NOVAETHER) -->
-                <div class="flex items-center gap-7">
-                    <a href="{{ route('home') }}" class="flex items-center gap-3.5 group">
-                        <div class="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 p-[2px] shadow-lg shadow-amber-500/25 group-hover:scale-105 transition duration-300">
-                            <div class="w-full h-full bg-[#090D1A] rounded-[14px] flex items-center justify-center">
-                                <svg class="w-7 h-7" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <defs>
-                                        <linearGradient id="novaGrad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                                            <stop offset="0%" stop-color="#FBBF24"/>
-                                            <stop offset="55%" stop-color="#FB7185"/>
-                                            <stop offset="100%" stop-color="#38BDF8"/>
-                                        </linearGradient>
-                                    </defs>
-                                    <path d="M18 8C13.5 5.5 7.5 5.5 4 7.5V27.5C7.5 25.5 13.5 25.5 18 28C22.5 25.5 28.5 25.5 32 27.5V7.5C28.5 5.5 22.5 5.5 18 8Z" stroke="url(#novaGrad)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M18 8V28" stroke="url(#novaGrad)" stroke-width="2.4" stroke-linecap="round"/>
+            <div class="flex items-center justify-between h-20 gap-3">
+                <!-- Logo Vectorial NOVAETHER -->
+                <div class="flex items-center gap-5 min-w-0">
+                    <a href="{{ route('home') }}" class="flex items-center gap-3 group flex-shrink-0">
+                        <div class="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-[2px] shadow-lg shadow-amber-500/20 group-hover:scale-105 transition duration-300">
+                            <div class="w-full h-full bg-[#090D16] rounded-[10px] flex items-center justify-center">
+                                <svg class="w-5 h-5" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <path d="M18 8C13.5 5.5 7.5 5.5 4 7.5V27.5C7.5 25.5 13.5 25.5 18 28C22.5 25.5 28.5 25.5 32 27.5V7.5C28.5 5.5 22.5 5.5 18 8Z" stroke="#FBBF24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M18 8V28" stroke="#F59E0B" stroke-width="2.4" stroke-linecap="round"/>
                                     <circle cx="18" cy="4.5" r="2" fill="#FBBF24"/>
-                                    <path d="M9 13H14M9 17.5H14M22 13H27M22 17.5H27" stroke="#F8FAFC" stroke-width="1.8" stroke-linecap="round"/>
+                                    <path d="M9 13H14M9 17.5H14M22 13H27M22 17.5H27" stroke="#E2E8F0" stroke-width="1.8" stroke-linecap="round"/>
                                 </svg>
                             </div>
                         </div>
                         <div>
                             <div class="flex items-center gap-1.5">
-                                <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-amber-200 to-orange-400 bg-clip-text text-transparent">
-                                    NOVAETHER
+                                <span class="font-extrabold text-lg tracking-tight text-white">
+                                    NOVA<span class="text-amber-400">ETHER</span>
                                 </span>
                                 <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-400 text-slate-950">
                                     STORE
                                 </span>
                             </div>
-                            <span class="block text-[10px] text-slate-400 font-semibold uppercase tracking-[0.2em] -mt-0.5">
-                                Books · Manga · Cloud Vault
+                            <span class="block text-[9px] text-slate-300 font-semibold uppercase tracking-[0.18em] -mt-0.5">
+                                Books · Manga · Digital Vault
                             </span>
                         </div>
                     </a>
 
-                    <!-- Enlaces del Escaparate Comercial -->
-                    <nav class="hidden lg:flex items-center gap-1.5">
+                    <!-- Navegación Desktop Limpia -->
+                    <nav class="hidden lg:flex items-center gap-1" aria-label="Navegación principal">
                         <a href="{{ route('books.index') }}"
-                           class="px-3.5 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition {{ request()->routeIs('home') || (request()->routeIs('books.index') && !request('category_id') && !request('buscar') && !request('formato')) ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20' : 'text-slate-300 hover:bg-slate-800/80 hover:text-white' }}">
-                            🔥 Catálogo Global
+                           class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request()->routeIs('home') || (request()->routeIs('books.index') && !request('category_id') && !request('formato')) ? 'bg-amber-400 text-slate-950 shadow-sm font-extrabold' : 'text-slate-200 hover:bg-slate-800 hover:text-white' }}">
+                            <span>Catálogo</span>
                         </a>
-                        <a href="{{ route('books.index', ['buscar' => 'Manga']) }}"
-                           class="px-3.5 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider text-rose-300 hover:bg-slate-800/80 transition">
-                            🎌 Manga & Cómics
-                        </a>
+
+                        <!-- Menú desplegable de las 12 Categorías -->
+                        <div class="relative group" id="nav-cat-wrapper">
+                            <button type="button"
+                                    onclick="document.getElementById('nav-cat-dropdown').classList.toggle('hidden')"
+                                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request('category_id') ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30' : 'text-slate-200 hover:bg-slate-800 hover:text-white' }}">
+                                <span>Categorías</span>
+                                <svg class="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <div id="nav-cat-dropdown" class="absolute left-0 top-full pt-2 w-80 hidden group-hover:block z-50">
+                                <div class="bg-slate-900 border border-slate-700/90 rounded-2xl shadow-2xl p-2 grid grid-cols-1 gap-0.5 max-h-96 overflow-y-auto">
+                                    @foreach($navCategories ?? [] as $cat)
+                                        <a href="{{ route('books.index', ['category_id' => $cat->id]) }}"
+                                           class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:bg-slate-800 hover:text-amber-300 transition">
+                                            <span>{{ $cat->icono }}</span>
+                                            <span class="truncate">{{ $cat->nombre }}</span>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
                         <a href="{{ route('books.index', ['formato' => 'digital']) }}"
-                           class="px-3.5 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider text-cyan-300 hover:bg-slate-800/80 transition">
-                            ⚡ Lectura Cloud
+                           class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request('formato') === 'digital' ? 'bg-amber-400 text-slate-950 font-extrabold' : 'text-slate-200 hover:bg-slate-800 hover:text-white' }}">
+                            <span>Edición Digital</span>
+                        </a>
+
+                        <a href="{{ route('plans') }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request()->routeIs('plans') ? 'bg-amber-400 text-slate-950 font-extrabold' : 'text-slate-200 hover:bg-slate-800 hover:text-white' }}">
+                            <span>Planes &amp; Cómo Funciona</span>
                         </a>
 
                         @auth
-                            <span class="h-5 w-[1px] bg-slate-800 mx-1"></span>
-                            @if(auth()->user()->esStaff())
-                                <a href="{{ route('dashboard') }}"
-                                   class="px-3.5 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition {{ request()->routeIs('dashboard') ? 'bg-emerald-500 text-slate-950' : 'text-emerald-300 hover:bg-slate-800 hover:text-white' }}">
-                                    📊 Panel & Reporte
-                                </a>
-                                <a href="{{ route('readers.index') }}"
-                                   class="px-3.5 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition {{ request()->routeIs('readers.*') ? 'bg-emerald-500 text-slate-950' : 'text-emerald-300 hover:bg-slate-800 hover:text-white' }}">
-                                    👥 Clientes
-                                </a>
-                            @endif
-                            <a href="{{ route('loans.index') }}"
-                               class="px-3.5 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition {{ request()->routeIs('loans.*') ? 'bg-amber-400 text-slate-950' : 'text-amber-300 hover:bg-slate-800 hover:text-white' }}">
-                                🔄 {{ auth()->user()->esCliente() ? 'Mis Préstamos' : 'Reservas & Préstamos' }}
+                            <span class="h-4 w-[1px] bg-slate-700 mx-1"></span>
+
+                            <a href="{{ route('favorites.index') }}"
+                               class="px-2.5 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request()->routeIs('favorites.*') ? 'bg-rose-500 text-white font-extrabold' : 'text-rose-300 hover:bg-slate-800' }}">
+                                Estantería
                             </a>
+
+                            <a href="{{ route('loans.index') }}"
+                               class="px-2.5 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request()->routeIs('loans.*') ? 'bg-amber-400 text-slate-950 font-extrabold' : 'text-amber-300 hover:bg-slate-800' }}">
+                                {{ auth()->user()->esCliente() ? 'Tickets QR' : 'Préstamos' }}
+                            </a>
+
+                            <a href="{{ route('orders.index') }}"
+                               class="px-2.5 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request()->routeIs('orders.*') ? 'bg-sky-400 text-slate-950 font-extrabold' : 'text-sky-300 hover:bg-slate-800' }}">
+                                {{ auth()->user()->esCliente() ? 'Pedidos' : 'Órdenes' }}
+                            </a>
+
+                            @if(auth()->user()->esAdmin())
+                                <div class="relative group">
+                                    <button type="button"
+                                            onclick="document.getElementById('nav-admin-dropdown').classList.toggle('hidden')"
+                                            class="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-extrabold tracking-wide transition {{ request()->routeIs('dashboard', 'readers.*', 'admin.*') ? 'bg-emerald-500 text-slate-950' : 'text-emerald-300 hover:bg-slate-800' }}">
+                                        <span>Admin</span>
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                    </button>
+                                    <div id="nav-admin-dropdown" class="absolute right-0 top-full pt-2 w-56 hidden group-hover:block z-50">
+                                        <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 space-y-0.5">
+                                            <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-emerald-300">📊 Dashboard Ejecutivo</a>
+                                            <a href="{{ route('readers.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-emerald-300">👥 Clientes y Planes</a>
+                                            <a href="{{ route('orders.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-emerald-300">📦 Órdenes y Pagos</a>
+                                            <a href="{{ route('admin.complaints.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-300">📖 Reclamaciones</a>
+                                            <a href="{{ route('admin.waitlists.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-300">🔔 Listas de Espera</a>
+                                            <a href="{{ route('admin.reviews.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-300">💬 Moderar Reseñas</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                         @endauth
                     </nav>
                 </div>
 
-                <!-- Zona Derecha: Botones de Crear Cuenta / Iniciar Sesión / Perfil -->
-                <div class="flex items-center gap-2.5">
+                <!-- Zona Derecha: Carrito + Cuenta + Botón Móvil -->
+                <div class="flex items-center gap-2">
                     @auth
-                        <div class="text-right hidden sm:block">
-                            <p class="text-xs font-bold text-white leading-none">{{ auth()->user()->name }}</p>
-                            <span class="inline-block mt-1 px-2.5 py-0.5 text-[10px] font-black uppercase rounded-full {{ auth()->user()->esAdmin() ? 'bg-amber-400 text-slate-950' : (auth()->user()->esCliente() ? 'bg-cyan-400 text-slate-950' : 'bg-emerald-400 text-slate-950') }}">
-                                {{ auth()->user()->rol }}
+                        <a href="{{ route('cart.index') }}"
+                           class="relative inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-extrabold text-amber-300 transition"
+                           title="Carrito de compras y reservas">
+                            <span>🛒</span>
+                            <span id="nav-cart-badge" class="px-1.5 py-0.5 text-[10px] font-black rounded-full {{ ($cartCount ?? 0) > 0 ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-300' }}">
+                                {{ $cartCount ?? 0 }}
                             </span>
-                        </div>
+                        </a>
+
+                        <a href="{{ route('profile.edit') }}" class="text-right hidden sm:block group">
+                            <p class="text-xs font-bold text-white leading-none group-hover:text-amber-300 transition">{{ auth()->user()->name }}</p>
+                            <div class="flex items-center justify-end gap-1.5 mt-1">
+                                @if(auth()->user()->reader)
+                                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-800 text-amber-300 border border-amber-400/30">
+                                        {{ auth()->user()->reader->puntos_karma }} pts
+                                    </span>
+                                @endif
+                                <span class="px-2.5 py-0.5 text-[10px] font-black uppercase rounded-full {{ auth()->user()->esAdmin() ? 'bg-amber-400 text-slate-950' : 'bg-sky-400 text-slate-950' }}">
+                                    {{ auth()->user()->esAdmin() ? 'Admin' : 'Cliente' }}
+                                </span>
+                            </div>
+                        </a>
+
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
-                            <button type="submit" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold px-4 py-2.5 rounded-xl transition shadow-lg">
+                            <button type="submit" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold px-3 py-2 rounded-xl transition shadow">
                                 Salir
                             </button>
                         </form>
                     @else
                         <a href="{{ route('login') }}"
-                           class="bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 text-xs font-extrabold px-4 py-2.5 rounded-xl transition">
-                            🔐 Iniciar Sesión
+                           class="bg-slate-900 hover:bg-slate-800 text-slate-100 border border-slate-700 text-xs font-bold px-4 py-2 rounded-xl transition">
+                            Iniciar Sesión
                         </a>
                         <a href="{{ route('register') }}"
-                           class="bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 hover:from-amber-300 hover:to-rose-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl shadow-lg shadow-amber-500/25 transition flex items-center gap-1.5">
-                            ✨ Crear Cuenta Gratis
+                           class="hidden sm:inline-block bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2 rounded-xl shadow-lg shadow-amber-500/20 transition">
+                            Crear Cuenta
                         </a>
                     @endauth
+
+                    <!-- Botón Menú Móvil -->
+                    <button type="button" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')"
+                            class="lg:hidden p-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 hover:text-white"
+                            aria-label="Abrir menú">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
                 </div>
+            </div>
+
+            <!-- Menú Desplegable Móvil -->
+            <div id="mobile-menu" class="hidden lg:hidden pb-4 pt-2 border-t border-slate-800 space-y-1">
+                <a href="{{ route('books.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800">Catálogo Completo</a>
+                <details class="px-3 py-1">
+                    <summary class="cursor-pointer py-1.5 text-xs font-bold text-slate-200 hover:text-amber-300">Categorías (12 áreas)</summary>
+                    <div class="pl-2 mt-1 space-y-1 max-h-60 overflow-y-auto">
+                        @foreach($navCategories ?? [] as $cat)
+                            <a href="{{ route('books.index', ['category_id' => $cat->id]) }}" class="block px-2.5 py-1.5 rounded-lg text-xs text-slate-300 hover:bg-slate-800 hover:text-amber-300">
+                                {{ $cat->icono }} {{ $cat->nombre }}
+                            </a>
+                        @endforeach
+                    </div>
+                </details>
+                <a href="{{ route('books.index', ['formato' => 'digital']) }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800">Edición Digital</a>
+                <a href="{{ route('plans') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800">Planes &amp; Cómo Funciona</a>
+                @auth
+                    <a href="{{ route('cart.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">🛒 Mi Carrito ({{ $cartCount ?? 0 }})</a>
+                    <a href="{{ route('favorites.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-rose-300 hover:bg-slate-800">❤️ Mi Estantería</a>
+                    <a href="{{ route('loans.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">🎫 Tickets QR y Reservas</a>
+                    <a href="{{ route('orders.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-sky-300 hover:bg-slate-800">📦 Mis Pedidos</a>
+                    <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800">👤 Mi Perfil y Karma</a>
+                    @if(auth()->user()->esAdmin())
+                        <div class="pt-2 mt-2 border-t border-slate-800 space-y-1">
+                            <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-emerald-300 hover:bg-slate-800">📊 Panel Ejecutivo Admin</a>
+                            <a href="{{ route('readers.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-emerald-300 hover:bg-slate-800">👥 Clientes / Planes</a>
+                            <a href="{{ route('admin.complaints.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">📖 Reclamaciones</a>
+                            <a href="{{ route('admin.waitlists.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">🔔 Listas de Espera</a>
+                            <a href="{{ route('admin.reviews.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">💬 Moderar Reseñas</a>
+                        </div>
+                    @endif
+                @else
+                    <a href="{{ route('register') }}" class="block px-3 py-2 rounded-xl text-xs font-black text-amber-400 hover:bg-slate-800">Crear Cuenta Gratis</a>
+                @endauth
             </div>
         </div>
     </header>
 
+    <!-- Notificación automática de Lista de Espera -->
+    @if(isset($notificacionesEspera) && $notificacionesEspera->isNotEmpty())
+        <div class="no-print max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-4 space-y-2">
+            @foreach($notificacionesEspera as $alerta)
+                <div class="rounded-2xl bg-emerald-950/95 border border-emerald-500/70 px-4 py-3 text-emerald-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                    <div class="flex items-center gap-2.5 text-sm">
+                        <span class="text-xl">🔔</span>
+                        <div>
+                            <strong class="text-emerald-300">¡Obra disponible en tu Lista de Espera!</strong>
+                            <span class="block sm:inline text-xs sm:text-sm">«{{ $alerta->book->titulo }}» ya tiene ejemplar disponible.</span>
+                        </div>
+                    </div>
+                    <a href="{{ route('loans.create', ['book_id' => $alerta->book_id]) }}"
+                       class="self-start sm:self-auto bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-black px-4 py-2 rounded-xl transition">
+                        Reservar Ahora →
+                    </a>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
     <!-- Mensajes Flash -->
-    <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+    <div class="no-print max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 mt-4 space-y-3">
         @if(session('success'))
-            <div class="rounded-2xl bg-emerald-950/90 text-emerald-100 border border-emerald-500/60 px-4 py-3.5 flex items-center justify-between shadow-xl">
+            <div role="status" class="js-auto-dismiss rounded-2xl bg-emerald-950/90 text-emerald-100 border border-emerald-500/60 px-4 py-3.5 flex items-center justify-between gap-3 shadow-xl transition-opacity duration-500">
                 <div class="flex items-center gap-2.5">
                     <span class="text-lg">✅</span>
                     <span class="font-semibold text-sm">{{ session('success') }}</span>
                 </div>
+                <button type="button" onclick="this.parentElement.remove()" class="text-emerald-300 hover:text-white text-xs font-bold px-2 py-1" aria-label="Cerrar">✕</button>
             </div>
         @endif
 
         @if(session('error'))
-            <div class="rounded-2xl bg-rose-950/90 text-rose-100 border border-rose-500/60 px-4 py-3.5 flex items-center justify-between shadow-xl">
+            <div role="alert" class="js-auto-dismiss rounded-2xl bg-rose-950/90 text-rose-100 border border-rose-500/60 px-4 py-3.5 flex items-center justify-between gap-3 shadow-xl transition-opacity duration-500">
                 <div class="flex items-center gap-2.5">
                     <span class="text-lg">⛔</span>
                     <span class="font-semibold text-sm">{{ session('error') }}</span>
                 </div>
+                <button type="button" onclick="this.parentElement.remove()" class="text-rose-300 hover:text-white text-xs font-bold px-2 py-1" aria-label="Cerrar">✕</button>
             </div>
         @endif
 
         @if($errors->any())
-            <div class="rounded-2xl bg-rose-950/90 border-2 border-rose-500 p-4 text-rose-100 shadow-xl">
+            <div role="alert" class="rounded-2xl bg-rose-950/95 border-2 border-rose-500 p-4 text-rose-100 shadow-xl">
                 <p class="font-extrabold text-sm mb-1 text-rose-300">⚠️ Atención — Verifica los siguientes datos:</p>
                 <ul class="list-disc list-inside text-sm font-medium space-y-1">
                     @foreach($errors->all() as $error)
@@ -178,22 +284,141 @@
     </div>
 
     <!-- Contenido principal -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8">
         @yield('content')
     </main>
 
-    <!-- Footer Comercial -->
-    <footer class="bg-[#050811] text-slate-400 border-t border-slate-800/80 mt-16 py-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+    <!-- Footer -->
+    <footer class="no-print bg-[#060911] text-slate-300 border-t border-slate-800 mt-10 py-10 pb-24 md:pb-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
             <div class="flex items-center gap-3">
-                <span class="font-extrabold text-sm bg-gradient-to-r from-amber-300 to-rose-400 bg-clip-text text-transparent">NOVAETHER™</span>
-                <span>· Plataforma Comercial de Libros, Cómics, Manga y Lectura Cloud</span>
+                <span class="font-extrabold text-sm text-amber-400">NOVAETHER™</span>
+                <span class="text-slate-300">· Librería Híbrida, Manga &amp; Bóveda Digital (Perú)</span>
             </div>
-            <div class="text-slate-500">
-                © {{ date('Y') }} NovaEther Digital Vault · Conectado en tiempo real a MySQL (XAMPP)
+            <div class="flex flex-wrap items-center gap-4">
+                <a href="{{ route('plans') }}" class="text-slate-200 hover:text-amber-300 font-bold transition">Planes &amp; Club</a>
+                <a href="{{ route('complaints.create') }}" class="inline-flex items-center gap-1.5 text-slate-200 hover:text-amber-300 font-bold border border-slate-700 px-3 py-1.5 rounded-lg transition">
+                    📖 Libro de Reclamaciones Virtual
+                </a>
+                <span class="text-slate-400">© {{ date('Y') }} NovaEther Digital Vault</span>
             </div>
         </div>
     </footer>
 
+    <!-- Barra Inferior Táctil App / WebView (Solo Móvil) -->
+    <nav class="no-print md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#090D16]/95 backdrop-blur-xl border-t border-slate-800 px-2 py-1.5 grid grid-cols-5 text-[10px] font-bold" aria-label="Menú inferior móvil">
+        <a href="{{ route('books.index') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('home', 'books.index') ? 'text-amber-400' : 'text-slate-300' }}">
+            <span class="text-base leading-none mb-0.5">📚</span>
+            <span>Catálogo</span>
+        </a>
+        <a href="{{ auth()->check() ? route('cart.index') : route('login') }}" class="relative flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('cart.*') ? 'text-amber-400' : 'text-slate-300' }}">
+            <span class="text-base leading-none mb-0.5">🛒</span>
+            <span>Carrito</span>
+            @auth
+                <span id="mobile-cart-badge" class="absolute top-0.5 right-3 px-1.5 rounded-full text-[9px] font-black {{ ($cartCount ?? 0) > 0 ? 'bg-amber-400 text-slate-950' : 'hidden' }}">{{ $cartCount ?? 0 }}</span>
+            @endauth
+        </a>
+        <a href="{{ auth()->check() ? route('favorites.index') : route('login') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('favorites.*') ? 'text-rose-400' : 'text-slate-300' }}">
+            <span class="text-base leading-none mb-0.5">❤️</span>
+            <span>Estantería</span>
+        </a>
+        <a href="{{ auth()->check() ? route('orders.index') : route('login') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('orders.*', 'loans.*') ? 'text-amber-400' : 'text-slate-300' }}">
+            <span class="text-base leading-none mb-0.5">🎫</span>
+            <span>Pedidos</span>
+        </a>
+        <a href="{{ auth()->check() ? (auth()->user()->esAdmin() ? route('dashboard') : route('profile.edit')) : route('login') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('profile.*', 'dashboard') ? 'text-emerald-400' : 'text-slate-300' }}">
+            <span class="text-base leading-none mb-0.5">{{ auth()->check() && auth()->user()->esAdmin() ? '📊' : '👤' }}</span>
+            <span>{{ auth()->check() ? (auth()->user()->esAdmin() ? 'Admin' : 'Perfil') : 'Entrar' }}</span>
+        </a>
+    </nav>
+
+    <!-- Modal de confirmación -->
+    <div id="nova-confirm-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="nova-confirm-title">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">⚠️</span>
+                <h3 id="nova-confirm-title" class="text-base font-extrabold text-white">Confirmar acción</h3>
+            </div>
+            <p id="nova-confirm-message" class="text-sm text-slate-300 leading-relaxed"></p>
+            <div class="flex justify-end gap-2.5 pt-2">
+                <button type="button" id="nova-confirm-cancel" class="px-4 py-2 rounded-xl border border-slate-700 text-xs font-bold text-slate-200 hover:bg-slate-800 transition">
+                    Cancelar
+                </button>
+                <button type="button" id="nova-confirm-accept" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-extrabold text-white transition shadow">
+                    Sí, continuar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Vista Rápida (Quick View) -->
+    <div id="nova-quickview-modal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="qv-titulo">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl relative">
+            <button type="button" id="qv-close" class="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-950/80 border border-slate-700 text-slate-200 hover:text-white flex items-center justify-center text-xs font-black">✕</button>
+
+            <div class="grid grid-cols-1 sm:grid-cols-12">
+                <div class="sm:col-span-4 bg-slate-950 p-6 flex flex-col items-center justify-center border-b sm:border-b-0 sm:border-r border-slate-800">
+                    <div class="w-36 aspect-[2/3] rounded-xl overflow-hidden bg-slate-900 border border-slate-700 shadow-lg flex items-center justify-center">
+                        <img id="qv-portada" src="" alt="" class="w-full h-full object-cover hidden">
+                        <span id="qv-portada-fallback" class="text-4xl">📚</span>
+                    </div>
+                    <span id="qv-rating" class="mt-3 text-xs font-bold text-amber-400 text-center"></span>
+                </div>
+
+                <div class="sm:col-span-8 p-6 space-y-3">
+                    <div class="flex flex-wrap items-center gap-2 pr-6">
+                        <span id="qv-categoria" class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30"></span>
+                        <span id="qv-stock" class="text-[10px] font-black px-2.5 py-0.5 rounded-full"></span>
+                    </div>
+
+                    <h3 id="qv-titulo" class="font-serif-editorial text-2xl font-bold text-white leading-tight"></h3>
+                    <p id="qv-autor" class="text-xs font-semibold text-slate-200"></p>
+
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <div class="bg-slate-950 rounded-xl p-2.5 border border-slate-800">
+                            <span class="block text-[10px] uppercase font-bold text-slate-400">Alquiler · Venta</span>
+                            <span id="qv-alquiler" class="text-xs sm:text-sm font-black text-amber-400"></span>
+                        </div>
+                        <div class="bg-slate-950 rounded-xl p-2.5 border border-slate-800">
+                            <span class="block text-[10px] uppercase font-bold text-slate-400">Club / Formato</span>
+                            <span id="qv-formato" class="text-xs font-bold text-emerald-300"></span>
+                        </div>
+                    </div>
+
+                    <p id="qv-sinopsis" class="text-xs text-slate-300 leading-relaxed max-h-28 overflow-y-auto"></p>
+
+                    <div class="pt-3 flex flex-wrap gap-2 border-t border-slate-800">
+                        @auth
+                            <form id="qv-buy-form" action="#" method="POST" class="js-cart-add-form">
+                                @csrf
+                                <input type="hidden" name="tipo_operacion" value="venta">
+                                <button type="submit" id="qv-buy-btn" data-no-loading="true"
+                                        class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black px-3.5 py-2.5 rounded-xl transition shadow">
+                                    🛒 Comprar
+                                </button>
+                            </form>
+                        @endauth
+                        <a id="qv-reserve-link" href="#" class="flex-1 text-center bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl transition shadow">
+                            Reservar ahora
+                        </a>
+                        <a id="qv-show-link" href="#" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition">
+                            Ver ficha →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor de Toasts Flotantes -->
+    <div id="nova-toast-container" class="no-print fixed bottom-20 md:bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(() => {});
+            });
+        }
+    </script>
 </body>
 </html>

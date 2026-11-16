@@ -1,9 +1,79 @@
 @import 'tailwindcss';
 
+@source '../views/**/*.blade.php';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-serif: 'Playfair Display', ui-serif, Georgia, serif;
+}
+
+@layer base {
+    html {
+        scrollbar-width: thin;
+        scrollbar-color: #334155 #090D16;
+    }
+
+    body {
+        font-family: var(--font-sans);
+        background-color: #090D16;
+        background-image:
+            radial-gradient(at 15% 5%, rgba(245, 158, 11, 0.08) 0px, transparent 45%),
+            radial-gradient(at 85% 12%, rgba(99, 102, 241, 0.08) 0px, transparent 45%);
+        background-attachment: fixed;
+    }
+
+    *::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    *::-webkit-scrollbar-track {
+        background: #090D16;
+    }
+    *::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 9999px;
+        border: 2px solid #090D16;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+    }
+}
+
+.font-serif-editorial {
+    font-family: var(--font-serif);
+}
+
+.book-card-3d {
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+.book-card-3d:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 22px 42px -12px rgba(245, 158, 11, 0.16);
+}
+
+.cover-shine {
+    transition: transform 0.38s ease;
+}
+
+.book-card-3d:hover .cover-shine {
+    transform: scale(1.06) rotate(-1deg);
+}
+
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+    }
+    .no-print {
+        display: none !important;
+    }
+    .print-card {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+    }
 }
