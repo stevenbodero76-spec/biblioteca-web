@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Book;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 class CartService
 {
@@ -53,16 +54,32 @@ class CartService
         $cart = session(self::SESSION_KEY, []);
         $key = "{$book->id}_{$tipo}";
 
+        $enOtrasLineas = $this->cantidadLibroEnCarrito($cart, $book->id, $key);
+
         if ($tipo === 'venta') {
             $actual = (int) ($cart[$key]['cantidad'] ?? 0);
-            $nuevaCantidad = min($book->stock_disponible, max(1, $actual + $cantidad));
+            $solicitado = max(1, $actual + $cantidad);
+
+            if (($enOtrasLineas + $solicitado) > $book->stock_disponible) {
+                $maxPosible = max(0, (int) $book->stock_disponible - $enOtrasLineas);
+                throw ValidationException::withMessages([
+                    'cantidad' => "Stock insuficiente para «{$book->titulo}» combinando compra y alquiler (disponible restante en carrito: {$maxPosible}).",
+                ]);
+            }
+
             $cart[$key] = [
                 'book_id' => $book->id,
                 'tipo_operacion' => 'venta',
-                'cantidad' => $nuevaCantidad,
+                'cantidad' => $solicitado,
                 'duracion_dias' => null,
             ];
         } else {
+            if (($enOtrasLineas + 1) > $book->stock_disponible) {
+                throw ValidationException::withMessages([
+                    'cantidad' => "Ya reservaste todo el stock disponible de «{$book->titulo}» en tu carrito ({$book->stock_disponible} uds.).",
+                ]);
+            }
+
             $diasValidos = in_array($duracionDias, [7, 14, 30], true) ? $duracionDias : 7;
             $cart[$key] = [
                 'book_id' => $book->id,
@@ -90,11 +107,18 @@ class CartService
             return;
         }
 
+        $enOtrasLineas = $this->cantidadLibroEnCarrito($cart, $book->id, $key);
+
         if (($cart[$key]['tipo_operacion'] ?? 'alquiler') === 'venta') {
             if ($cantidad <= 0) {
                 unset($cart[$key]);
+            } elseif (($enOtrasLineas + $cantidad) > $book->stock_disponible) {
+                $maxPosible = max(0, (int) $book->stock_disponible - $enOtrasLineas);
+                throw ValidationException::withMessages([
+                    'cantidad' => "Stock insuficiente para «{$book->titulo}». Máximo permitido en compra manteniendo tus otras líneas: {$maxPosible}.",
+                ]);
             } else {
-                $cart[$key]['cantidad'] = min($book->stock_disponible, max(1, $cantidad));
+                $cart[$key]['cantidad'] = $cantidad;
             }
         } else {
             $diasValidos = in_array((int) $duracionDias, [7, 14, 30], true) ? (int) $duracionDias : 7;
@@ -136,5 +160,23 @@ class CartService
         $items = $this->items();
 
         return $items->isNotEmpty() && $items->every(fn ($i) => $i['tipo_operacion'] === 'alquiler');
+    }
+
+    private function cantidadLibroEnCarrito(array $cart, int $bookId, ?string $excludeKey = null): int
+    {
+        $total = 0;
+
+        foreach ($cart as $k => $entry) {
+            if ($k === $excludeKey) {
+                continue;
+            }
+            if ((int) ($entry['book_id'] ?? 0) === $bookId) {
+                $total += ($entry['tipo_operacion'] ?? 'alquiler') === 'venta'
+                    ? max(1, (int) ($entry['cantidad'] ?? 1))
+                    : 1;
+            }
+        }
+
+        return $total;
     }
 }
