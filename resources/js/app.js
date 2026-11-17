@@ -292,8 +292,7 @@ function abrirQuickView(book) {
     document.getElementById('qv-titulo').textContent = book.titulo || '';
     document.getElementById('qv-autor').textContent = `Autor: ${book.autor || ''} · ${book.editorial || ''} (${book.anio || ''})`;
     document.getElementById('qv-rating').textContent = book.rating_texto || '';
-    document.getElementById('qv-alquiler').textContent = `Alq. S/ ${book.precio_alquiler || '0.00'} · Venta S/ ${book.precio_venta || '0.00'}`;
-    document.getElementById('qv-formato').textContent = `Club S/ 0 · ${book.formato || ''}`;
+    document.getElementById('qv-formato').textContent = book.formato || '';
     document.getElementById('qv-sinopsis').textContent = book.sinopsis || '';
 
     const stockEl = document.getElementById('qv-stock');
@@ -307,7 +306,7 @@ function abrirQuickView(book) {
     if (buyForm && buyBtn) {
         buyForm.action = book.cart_url || '#';
         buyForm.classList.toggle('hidden', !book.disponible);
-        buyBtn.textContent = `🛒 Comprar S/ ${book.precio_venta || '0.00'}`;
+        buyBtn.textContent = '🛒 Comprar';
     }
 
     const reserveLink = document.getElementById('qv-reserve-link');

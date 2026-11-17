@@ -84,7 +84,6 @@
     <div class="bg-slate-900/95 rounded-3xl border border-slate-800 p-6">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-base font-extrabold text-white">✨ Movimientos de Puntos Nova (10 pts = S/ 1.00 en Carrito)</h2>
-            <a href="{{ route('plans') }}" class="text-xs font-bold text-amber-400 hover:underline">Gestionar mi plan →</a>
         </div>
         <div class="space-y-2">
             @forelse($movimientosKarma as $mov)
