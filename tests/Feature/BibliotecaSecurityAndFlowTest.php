@@ -31,6 +31,55 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $this->get("/books/{$book->id}")->assertStatus(200)->assertSee($book->titulo);
     }
 
+    public function test_book_detail_connects_the_embedded_reader_and_related_works(): void
+    {
+        $category = Category::create([
+            'nombre' => 'Lecturas conectadas de prueba',
+            'icono' => '📚',
+        ]);
+        $otherCategory = Category::create([
+            'nombre' => 'Otra temática conectada de prueba',
+            'icono' => '📖',
+        ]);
+        $readingUrl = 'https://archive.org/embed/reader-test-book';
+        $book = Book::create([
+            'category_id' => $category->id,
+            'isbn' => '979-0000000001',
+            'titulo' => 'Obra principal de prueba',
+            'autor' => 'Autora de prueba',
+            'formato' => 'digital',
+            'archivo_pdf' => $readingUrl,
+            'stock_total' => 1,
+            'stock_disponible' => 1,
+        ]);
+
+        $authorRelatedBook = Book::create([
+            'category_id' => $otherCategory->id,
+            'isbn' => '979-0000000002',
+            'titulo' => 'Otra obra de la misma autora',
+            'autor' => $book->autor,
+            'formato' => 'digital',
+            'stock_total' => 1,
+            'stock_disponible' => 1,
+        ]);
+        $topicRelatedBook = Book::create([
+            'category_id' => $category->id,
+            'isbn' => '979-0000000003',
+            'titulo' => 'Otra obra de la misma temática',
+            'autor' => 'Otro autor de prueba',
+            'formato' => 'digital',
+            'stock_total' => 1,
+            'stock_disponible' => 1,
+        ]);
+
+        $this->get("/books/{$book->id}")
+            ->assertStatus(200)
+            ->assertSee('Leer Obra Completa Ahora')
+            ->assertSee($readingUrl)
+            ->assertSee($authorRelatedBook->titulo)
+            ->assertSee($topicRelatedBook->titulo);
+    }
+
     public function test_register_creates_linked_user_and_reader_and_logs_in(): void
     {
         $response = $this->post('/register', [
@@ -254,26 +303,6 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             ->assertDontSee("/books/{$book->id}");
     }
 
-    public function test_client_one_click_duration_and_server_calculated_yape_amount(): void
-    {
-        $cliente = User::where('email', 'cliente@novaether.com')->firstOrFail();
-        $book = Book::where('stock_disponible', '>', 0)->firstOrFail();
-
-        $response = $this->actingAs($cliente)->post('/loans', [
-            'book_id' => $book->id,
-            'duracion_dias' => 14,
-            'metodo_pago' => 'yape_plin',
-            'monto' => 0.01, // Intento de manipulación de precio en cliente
-        ]);
-
-        $loan = Loan::latest('id')->first();
-        $response->assertRedirect(route('loans.ticket', $loan));
-
-        $this->assertSame('yape_plin', $loan->metodo_pago);
-        $this->assertSame((float) $book->precio_alquiler, (float) $loan->monto);
-        $this->assertSame(now()->addDays(14)->toDateString(), $loan->fecha_devolucion_esperada->toDateString());
-    }
-
     public function test_on_time_return_awards_karma_points_to_reader(): void
     {
         $admin = User::where('email', 'admin@novaether.com')->firstOrFail();
@@ -289,13 +318,15 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $this->assertSame($karmaAntes + 25, $loan->reader->fresh()->puntos_karma);
     }
 
-    public function test_plans_page_and_full_navbar_render_and_only_two_roles_exist(): void
+    public function test_plan_routes_are_removed_and_public_catalog_has_no_plans_link(): void
     {
-        $this->get('/planes')->assertStatus(200)->assertSee('Club NovaEther Pro');
+        $cliente = User::where('email', 'cliente@novaether.com')->firstOrFail();
+
+        $this->get('/planes')->assertNotFound();
+        $this->actingAs($cliente)->post('/planes/suscribir')->assertNotFound();
         $this->get('/')->assertStatus(200)
             ->assertSee('Categorías')
-            ->assertSee('Edición Digital')
-            ->assertSee('Planes &amp; Cómo Funciona', false);
+            ->assertDontSee('Planes &amp; Cómo Funciona', false);
 
         $this->assertSame(['admin', 'cliente'], User::orderBy('rol')->pluck('rol')->unique()->values()->all());
     }
@@ -398,7 +429,6 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             'email' => 'valeria.campos@example.com',
             'telefono' => '988776655',
             'tipo' => 'publico',
-            'plan_suscripcion' => 'estudiante',
             'estado' => 'activo',
             'password' => 'claveSegura1',
         ])->assertRedirect(route('readers.index'));
@@ -415,7 +445,6 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             'email' => 'valeria.sofia@example.com',
             'telefono' => '988776655',
             'tipo' => 'docente',
-            'plan_suscripcion' => 'pro',
             'estado' => 'activo',
         ])->assertRedirect(route('readers.index'));
 
@@ -424,50 +453,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $this->assertSame('Valeria Sofía Campos Neyra', $reader->user->fresh()->name);
     }
 
-    public function test_unpaid_loan_stays_pending_and_expires_automatically_releasing_stock(): void
-    {
-        $cliente = User::where('email', 'cliente@novaether.com')->firstOrFail();
-        $admin = User::where('email', 'admin@novaether.com')->firstOrFail();
-        $book = Book::where('isbn', '978-0451524935')->firstOrFail();
-        $stockAntes = $book->stock_disponible;
-
-        $this->actingAs($cliente)->post('/loans', [
-            'book_id' => $book->id,
-            'duracion_dias' => 7,
-            'metodo_pago' => 'yape_plin',
-            'codigo_operacion' => 'YP-112233',
-        ])->assertRedirect();
-
-        $loan = Loan::latest('id')->firstOrFail();
-        $this->assertSame('pendiente', $loan->estado_pago);
-        $this->assertSame('YP-112233', $loan->codigo_operacion);
-        $this->assertSame($stockAntes - 1, $book->fresh()->stock_disponible);
-
-        // Expirar manualmente plazo de 24h y ejecutar comando de sincronización
-        $loan->update(['expira_pago_at' => now()->subHour()]);
-        $this->artisan('loans:sync-overdue')->assertExitCode(0);
-
-        $this->assertSame('anulado', $loan->fresh()->estado_pago);
-        $this->assertSame('devuelto', $loan->fresh()->estado);
-        $this->assertSame($stockAntes, $book->fresh()->stock_disponible);
-
-        // Confirmación manual por Admin en nuevo préstamo pendiente
-        $this->actingAs($cliente)->post('/loans', [
-            'book_id' => $book->id,
-            'duracion_dias' => 7,
-            'metodo_pago' => 'mostrador',
-        ]);
-        $loan2 = Loan::latest('id')->firstOrFail();
-
-        $this->actingAs($admin)
-            ->patch("/loans/{$loan2->id}/confirmar-pago", ['codigo_operacion' => 'CAJA-001'])
-            ->assertRedirect();
-
-        $this->assertSame('pagado', $loan2->fresh()->estado_pago);
-        $this->assertSame('CAJA-001', $loan2->fresh()->codigo_operacion);
-    }
-
-    public function test_free_plan_user_cannot_force_membership_zero_soles_rental_until_subscribed(): void
+    public function test_active_public_reader_can_reserve_without_plan_or_payment_fields(): void
     {
         $this->post('/register', [
             'nombres' => 'Mateo',
@@ -479,25 +465,19 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         ])->assertRedirect(route('home'));
 
         $mateo = User::where('email', 'mateo.free@example.com')->firstOrFail();
+        $mateo->reader->update(['tipo' => 'publico']);
         $book = Book::where('stock_disponible', '>', 0)->firstOrFail();
 
-        $this->actingAs($mateo)->post('/loans', [
+        $response = $this->actingAs($mateo)->post('/loans', [
             'book_id' => $book->id,
             'duracion_dias' => 7,
-            'metodo_pago' => 'membresia',
-        ])->assertSessionHasErrors('metodo_pago');
+        ]);
 
-        // Al suscribirse a Club NovaEther Pro en /planes puede usar membresía
-        $this->actingAs($mateo)->post('/planes/suscribir', [
-            'plan_suscripcion' => 'pro',
-        ])->assertRedirect();
-
-        $this->assertSame('pro', $mateo->reader->fresh()->plan_suscripcion);
-        $this->actingAs($mateo)->post('/loans', [
-            'book_id' => $book->id,
-            'duracion_dias' => 7,
-            'metodo_pago' => 'membresia',
-        ])->assertRedirect();
+        $loan = Loan::latest('id')->firstOrFail();
+        $response->assertRedirect(route('loans.ticket', $loan));
+        $this->assertSame($mateo->reader->id, $loan->reader_id);
+        $this->assertSame($book->id, $loan->book_id);
+        $this->assertSame('prestado', $loan->estado);
     }
 
     public function test_unified_cart_direct_sale_rental_and_karma_redemption_creates_order(): void

@@ -8,7 +8,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\OrderController;
-use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReaderController;
 use App\Http\Controllers\ReviewController;
@@ -18,7 +17,6 @@ use Illuminate\Support\Facades\Route;
 // PORTAL PÚBLICO DE NOVAETHER™
 Route::get('/', [BookController::class, 'index'])->name('home');
 Route::get('/books', [BookController::class, 'index'])->name('books.index');
-Route::get('/planes', [PlanController::class, 'index'])->name('plans');
 
 // Libro de Reclamaciones Virtual (Cumplimiento comercial Perú)
 Route::get('/libro-de-reclamaciones', [ComplaintController::class, 'create'])->name('complaints.create');
@@ -50,11 +48,10 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // Autogestión de cuenta y suscripción de planes
+    // Autogestión de cuenta
     Route::get('/mi-perfil', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/mi-perfil', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/mi-perfil/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
-    Route::post('/planes/suscribir', [PlanController::class, 'subscribe'])->name('plans.subscribe');
 
     // Carrito Unificado (Compra directa + Alquileres multi-ítem) y Órdenes
     Route::get('/carrito', [CartController::class, 'index'])->name('cart.index');
