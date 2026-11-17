@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BookRequest;
 use App\Models\Book;
 use App\Models\Category;
+use App\Services\BookLinkInterconnectorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -82,7 +83,7 @@ class BookController extends Controller
         ));
     }
 
-    public function show(Book $book): View
+    public function show(Book $book, BookLinkInterconnectorService $interconnector): View
     {
         $esAdmin = Auth::check() && Auth::user()->esAdmin();
 
@@ -98,11 +99,12 @@ class BookController extends Controller
             ->loadAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
             ->loadCount(['reviews' => fn ($q) => $q->where('visible', true)]);
 
-        $relacionados = Book::with('category')
-            ->where('category_id', $book->category_id)
-            ->where('id', '!=', $book->id)
-            ->take(4)
-            ->get();
+        $enlacesLectura = $interconnector->resolverEnlacesLectura($book);
+        if (empty($book->archivo_pdf)) {
+            $book->setAttribute('archivo_pdf', $enlacesLectura['principal_url']);
+        }
+
+        $relacionados = $interconnector->obtenerLibrosInterconectados($book, 4);
 
         $waitlistCount = $book->waitlists()
             ->whereIn('estado', ['en_espera', 'notificado'])
@@ -144,6 +146,7 @@ class BookController extends Controller
         return view('books.show', compact(
             'book',
             'relacionados',
+            'enlacesLectura',
             'waitlistCount',
             'proximaDevolucion',
             'miWaitlist',
@@ -160,17 +163,17 @@ class BookController extends Controller
         return view('books.create', compact('categories'));
     }
 
-    public function store(BookRequest $request): RedirectResponse
+    public function store(BookRequest $request, BookLinkInterconnectorService $interconnector): RedirectResponse
     {
-        $datos = $this->prepararDatosLibro($request);
-        $datos['precio_alquiler'] = $datos['precio_alquiler'] ?? 8.00;
-        $datos['precio_venta'] = $datos['precio_venta'] ?? 49.90;
+        $datos = $this->prepararDatosLibro($request, null, $interconnector);
+        $datos['precio_alquiler'] = $datos['precio_alquiler'] ?? 0.00;
+        $datos['precio_venta'] = $datos['precio_venta'] ?? 0.00;
 
         Book::create($datos);
 
         return redirect()
             ->route('books.index')
-            ->with('success', 'Obra registrada exitosamente en el catálogo.');
+            ->with('success', 'Obra registrada e interconectada exitosamente en el catálogo.');
     }
 
     public function edit(Book $book): View
@@ -181,9 +184,9 @@ class BookController extends Controller
         return view('books.edit', compact('book', 'categories', 'prestamosActivos'));
     }
 
-    public function update(BookRequest $request, Book $book): RedirectResponse
+    public function update(BookRequest $request, Book $book, BookLinkInterconnectorService $interconnector): RedirectResponse
     {
-        $datos = $this->prepararDatosLibro($request, $book);
+        $datos = $this->prepararDatosLibro($request, $book, $interconnector);
         $datos['precio_alquiler'] = $datos['precio_alquiler'] ?? $book->precio_alquiler;
         $datos['precio_venta'] = $datos['precio_venta'] ?? $book->precio_venta;
 
@@ -191,7 +194,7 @@ class BookController extends Controller
 
         return redirect()
             ->route('books.index')
-            ->with('success', 'Datos de la obra actualizados correctamente.');
+            ->with('success', 'Datos y enlaces de lectura de la obra actualizados correctamente.');
     }
 
     public function destroy(Book $book): RedirectResponse
@@ -212,7 +215,7 @@ class BookController extends Controller
             ->with('success', 'Obra eliminada del catálogo.');
     }
 
-    public function buscarPorIsbn(string $isbn): JsonResponse
+    public function buscarPorIsbn(string $isbn, BookLinkInterconnectorService $interconnector): JsonResponse
     {
         $cleanIsbn = preg_replace('/[^0-9Xx]/', '', $isbn);
 
@@ -264,6 +267,8 @@ class BookController extends Controller
                 ?? $payload['cover']['medium']
                 ?? "https://covers.openlibrary.org/b/isbn/{$cleanIsbn}-L.jpg";
 
+            $enlaces = $interconnector->extraerEnlacesDesdeOpenLibrary($cleanIsbn, $payload);
+
             $resultado = [
                 'encontrado' => true,
                 'titulo' => $payload['title'] ?? '',
@@ -271,6 +276,8 @@ class BookController extends Controller
                 'editorial' => $editoriales,
                 'anio_publicacion' => $anio,
                 'portada_url' => $portada,
+                'archivo_pdf' => $enlaces['archivo_pdf'],
+                'enlaces_lectura' => $enlaces['fuentes'],
                 'sinopsis' => $payload['notes'] ?? ($payload['subtitle'] ?? ''),
             ];
 
@@ -285,8 +292,11 @@ class BookController extends Controller
         }
     }
 
-    private function prepararDatosLibro(BookRequest $request, ?Book $book = null): array
-    {
+    private function prepararDatosLibro(
+        BookRequest $request,
+        ?Book $book = null,
+        ?BookLinkInterconnectorService $interconnector = null
+    ): array {
         $datos = collect($request->validated())->except(['portada_file', 'pdf_file'])->toArray();
 
         if ($request->hasFile('portada_file')) {
@@ -307,6 +317,13 @@ class BookController extends Controller
             }
         } elseif ($book && empty($datos['archivo_pdf'])) {
             $datos['archivo_pdf'] = $book->archivo_pdf;
+        }
+
+        if (empty($datos['archivo_pdf']) && $interconnector) {
+            $datos['archivo_pdf'] = $interconnector->construirUrlLecturaPorDefecto(
+                (string) ($datos['isbn'] ?? ''),
+                (string) ($datos['titulo'] ?? '')
+            );
         }
 
         return $datos;
