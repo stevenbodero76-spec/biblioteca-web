@@ -43,12 +43,6 @@ class CreateLoanAction
 
             $metodoSolicitado = $datos['metodo_pago'] ?? 'gratuito';
 
-            if ($metodoSolicitado === 'membresia' && ! $actor->esAdmin() && ! $reader->puedeUsarMembresia()) {
-                throw ValidationException::withMessages([
-                    'metodo_pago' => 'Tu plan actual (Lector Free) no incluye reservas con S/ 0.00. Selecciona préstamo público gratuito o actualiza tu ficha.',
-                ]);
-            }
-
             $esGratuitoOMembresia = in_array($metodoSolicitado, ['gratuito', 'membresia'], true);
             $metodoPago = $esGratuitoOMembresia ? 'membresia' : $metodoSolicitado;
             $monto = $esGratuitoOMembresia ? 0.00 : (float) $book->precio_alquiler;
