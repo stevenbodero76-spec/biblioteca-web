@@ -16,8 +16,6 @@
         'stock_texto' => $book->estaDisponible()
             ? "{$book->stock_disponible} de {$book->stock_total} disponibles"
             : "AGOTADO (0 de {$book->stock_total})",
-        'precio_alquiler' => number_format((float) $book->precio_alquiler, 2),
-        'precio_venta' => number_format((float) $book->precio_venta, 2),
         'rating_texto' => ($book->reviews_count ?? 0) > 0
             ? '★ ' . number_format((float) $book->reviews_avg_rating, 1) . ' (' . $book->reviews_count . ' reseñas)'
             : '✨ Estreno sin reseñas aún',
@@ -80,12 +78,8 @@
                     @endif
                 </div>
 
-                <!-- Precios + Stock -->
+                <!-- Stock -->
                 <div class="mt-2.5 flex flex-wrap gap-1.5">
-                    <span class="text-[10px] font-black px-2 py-0.5 rounded-md bg-slate-800 text-amber-300 border border-slate-700">
-                        Alq. S/ {{ number_format((float) $book->precio_alquiler, 2) }} · Venta S/ {{ number_format((float) $book->precio_venta, 2) }}
-                    </span>
-
                     @if($book->estaDisponible())
                         <span class="text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                             🟢 {{ $book->stock_disponible }}/{{ $book->stock_total }} Disp.
@@ -127,7 +121,7 @@
                     <button type="submit" data-no-loading="true"
                             class="h-9 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 border border-emerald-500/40 text-xs font-black transition whitespace-nowrap"
                             title="Añadir compra directa al carrito">
-                        🛒 S/ {{ number_format((float) $book->precio_venta, 2) }}
+                        🛒 Comprar
                     </button>
                 </form>
             @endauth

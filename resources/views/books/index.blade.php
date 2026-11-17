@@ -28,7 +28,7 @@
                 </h1>
 
                 <p class="text-slate-300 text-sm sm:text-base max-w-2xl leading-relaxed">
-                    Sin esperas de semanas ni quiebres de stock fantasma. Explora mangas coleccionistas, bestsellers y libros de ingeniería con precios transparentes en Soles, Ticket QR inmediato y visor interactivo integrado.
+                    Sin esperas de semanas ni quiebres de stock fantasma. Explora mangas coleccionistas, bestsellers y libros de ingeniería con Ticket QR inmediato y visor interactivo integrado.
                 </p>
 
                 <!-- Buscador rápido sincronizado con el filtro en vivo -->
@@ -67,7 +67,7 @@
             </div>
 
             <!-- Panel de métricas -->
-            <div class="lg:col-span-5 grid grid-cols-2 gap-3.5">
+            <div class="lg:col-span-5 grid grid-cols-2 lg:grid-cols-3 gap-3.5">
                 <div class="bg-slate-950/75 border border-slate-800 hover:border-amber-400/40 p-5 rounded-2xl transition">
                     <div class="flex items-center justify-between">
                         <span class="text-2xl">📚</span>
@@ -84,15 +84,6 @@
                     </div>
                     <p class="text-3xl font-black text-emerald-400 mt-2">{{ $stats['disponibles_ahora'] }}</p>
                     <p class="text-xs text-slate-300 mt-0.5">Unidades listas para entrega</p>
-                </div>
-
-                <div class="bg-slate-950/75 border border-slate-800 hover:border-slate-600 p-5 rounded-2xl transition">
-                    <div class="flex items-center justify-between">
-                        <span class="text-2xl">💳</span>
-                        <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-200">Perú</span>
-                    </div>
-                    <p class="text-xl font-black text-white mt-2">Yape · Plin</p>
-                    <p class="text-xs text-slate-300 mt-0.5">O gratis con Club NovaEther</p>
                 </div>
 
                 <div class="bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-400/40 p-5 rounded-2xl flex flex-col justify-between">
@@ -171,8 +162,8 @@
                         <h3 class="font-bold text-xs sm:text-sm text-white group-hover:text-amber-300 line-clamp-2 leading-snug">{{ $item->titulo }}</h3>
                         <p class="text-[11px] text-slate-300 mt-1 truncate">{{ $item->autor }}</p>
                     </div>
-                    <div class="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-[11px] text-amber-400 font-extrabold">
-                        <span>S/ {{ number_format((float) $item->precio_alquiler, 2) }} alq.</span>
+                    <div class="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-300 font-extrabold">
+                        <span>Ver detalle</span>
                         <span class="group-hover:translate-x-1 transition">→</span>
                     </div>
                 </a>

@@ -19,7 +19,7 @@
 
     <!-- Cintillo comercial superior -->
     <div class="no-print bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 text-slate-950 text-xs font-extrabold py-2 px-4 text-center tracking-wide shadow-sm">
-        ⚡ NOVAETHER™ PERÚ · Compra Directa y Alquiler en Soles · Yape / Plin / Tarjeta + Tickets QR + Canje de Puntos Nova
+        ⚡ NOVAETHER™ PERÚ · Compra Directa y Alquiler · Pagos Digitales / Tarjeta + Tickets QR + Canje de Puntos Nova
     </div>
 
     <!-- Barra de navegación principal -->
@@ -88,11 +88,6 @@
                         <a href="{{ route('books.index', ['formato' => 'digital']) }}"
                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request('formato') === 'digital' ? 'bg-amber-400 text-slate-950 font-extrabold' : 'text-slate-200 hover:bg-slate-800 hover:text-white' }}">
                             <span>Edición Digital</span>
-                        </a>
-
-                        <a href="{{ route('plans') }}"
-                           class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request()->routeIs('plans') ? 'bg-amber-400 text-slate-950 font-extrabold' : 'text-slate-200 hover:bg-slate-800 hover:text-white' }}">
-                            <span>Planes &amp; Cómo Funciona</span>
                         </a>
 
                         @auth
@@ -205,7 +200,6 @@
                     </div>
                 </details>
                 <a href="{{ route('books.index', ['formato' => 'digital']) }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800">Edición Digital</a>
-                <a href="{{ route('plans') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800">Planes &amp; Cómo Funciona</a>
                 @auth
                     <a href="{{ route('cart.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">🛒 Mi Carrito ({{ $cartCount ?? 0 }})</a>
                     <a href="{{ route('favorites.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-rose-300 hover:bg-slate-800">❤️ Mi Estantería</a>
@@ -296,7 +290,6 @@
                 <span class="text-slate-300">· Librería Híbrida, Manga &amp; Bóveda Digital (Perú)</span>
             </div>
             <div class="flex flex-wrap items-center gap-4">
-                <a href="{{ route('plans') }}" class="text-slate-200 hover:text-amber-300 font-bold transition">Planes &amp; Club</a>
                 <a href="{{ route('complaints.create') }}" class="inline-flex items-center gap-1.5 text-slate-200 hover:text-amber-300 font-bold border border-slate-700 px-3 py-1.5 rounded-lg transition">
                     📖 Libro de Reclamaciones Virtual
                 </a>
@@ -374,15 +367,9 @@
                     <h3 id="qv-titulo" class="font-serif-editorial text-2xl font-bold text-white leading-tight"></h3>
                     <p id="qv-autor" class="text-xs font-semibold text-slate-200"></p>
 
-                    <div class="grid grid-cols-2 gap-2 pt-1">
-                        <div class="bg-slate-950 rounded-xl p-2.5 border border-slate-800">
-                            <span class="block text-[10px] uppercase font-bold text-slate-400">Alquiler · Venta</span>
-                            <span id="qv-alquiler" class="text-xs sm:text-sm font-black text-amber-400"></span>
-                        </div>
-                        <div class="bg-slate-950 rounded-xl p-2.5 border border-slate-800">
-                            <span class="block text-[10px] uppercase font-bold text-slate-400">Club / Formato</span>
-                            <span id="qv-formato" class="text-xs font-bold text-emerald-300"></span>
-                        </div>
+                    <div class="pt-1">
+                        <span class="block text-[10px] uppercase font-bold text-slate-400">Formato</span>
+                        <span id="qv-formato" class="text-xs font-bold text-slate-200"></span>
                     </div>
 
                     <p id="qv-sinopsis" class="text-xs text-slate-300 leading-relaxed max-h-28 overflow-y-auto"></p>
