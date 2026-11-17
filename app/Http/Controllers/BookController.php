@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BookRequest;
 use App\Models\Book;
 use App\Models\Category;
+use App\Services\BookLinkInterconnectorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class BookController extends Controller
@@ -80,7 +83,7 @@ class BookController extends Controller
         ));
     }
 
-    public function show(Book $book): View
+    public function show(Book $book, BookLinkInterconnectorService $interconnector): View
     {
         $esAdmin = Auth::check() && Auth::user()->esAdmin();
 
@@ -96,11 +99,12 @@ class BookController extends Controller
             ->loadAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
             ->loadCount(['reviews' => fn ($q) => $q->where('visible', true)]);
 
-        $relacionados = Book::with('category')
-            ->where('category_id', $book->category_id)
-            ->where('id', '!=', $book->id)
-            ->take(4)
-            ->get();
+        $enlacesLectura = $interconnector->resolverEnlacesLectura($book);
+        if (empty($book->archivo_pdf)) {
+            $book->setAttribute('archivo_pdf', $enlacesLectura['principal_url']);
+        }
+
+        $relacionados = $interconnector->obtenerLibrosInterconectados($book, 4);
 
         $waitlistCount = $book->waitlists()
             ->whereIn('estado', ['en_espera', 'notificado'])
@@ -142,6 +146,7 @@ class BookController extends Controller
         return view('books.show', compact(
             'book',
             'relacionados',
+            'enlacesLectura',
             'waitlistCount',
             'proximaDevolucion',
             'miWaitlist',
@@ -158,17 +163,17 @@ class BookController extends Controller
         return view('books.create', compact('categories'));
     }
 
-    public function store(BookRequest $request): RedirectResponse
+    public function store(BookRequest $request, BookLinkInterconnectorService $interconnector): RedirectResponse
     {
-        $datos = $this->prepararDatosLibro($request);
-        $datos['precio_alquiler'] = $datos['precio_alquiler'] ?? 8.00;
-        $datos['precio_venta'] = $datos['precio_venta'] ?? 49.90;
+        $datos = $this->prepararDatosLibro($request, null, $interconnector);
+        $datos['precio_alquiler'] = $datos['precio_alquiler'] ?? 0.00;
+        $datos['precio_venta'] = $datos['precio_venta'] ?? 0.00;
 
         Book::create($datos);
 
         return redirect()
             ->route('books.index')
-            ->with('success', 'Obra registrada exitosamente en el catálogo.');
+            ->with('success', 'Obra registrada e interconectada exitosamente en el catálogo.');
     }
 
     public function edit(Book $book): View
@@ -179,9 +184,9 @@ class BookController extends Controller
         return view('books.edit', compact('book', 'categories', 'prestamosActivos'));
     }
 
-    public function update(BookRequest $request, Book $book): RedirectResponse
+    public function update(BookRequest $request, Book $book, BookLinkInterconnectorService $interconnector): RedirectResponse
     {
-        $datos = $this->prepararDatosLibro($request, $book);
+        $datos = $this->prepararDatosLibro($request, $book, $interconnector);
         $datos['precio_alquiler'] = $datos['precio_alquiler'] ?? $book->precio_alquiler;
         $datos['precio_venta'] = $datos['precio_venta'] ?? $book->precio_venta;
 
@@ -189,7 +194,7 @@ class BookController extends Controller
 
         return redirect()
             ->route('books.index')
-            ->with('success', 'Datos de la obra actualizados correctamente.');
+            ->with('success', 'Datos y enlaces de lectura de la obra actualizados correctamente.');
     }
 
     public function destroy(Book $book): RedirectResponse
@@ -198,14 +203,19 @@ class BookController extends Controller
             return back()->with('error', 'No se puede eliminar esta obra porque tiene historial de préstamos o ventas asociadas.');
         }
 
+        $portada = $book->portada_url;
+        $pdf = $book->archivo_pdf;
         $book->delete();
+
+        $this->eliminarArchivoPublicoSiLocal($portada);
+        $this->eliminarArchivoPublicoSiLocal($pdf);
 
         return redirect()
             ->route('books.index')
             ->with('success', 'Obra eliminada del catálogo.');
     }
 
-    public function buscarPorIsbn(string $isbn): JsonResponse
+    public function buscarPorIsbn(string $isbn, BookLinkInterconnectorService $interconnector): JsonResponse
     {
         $cleanIsbn = preg_replace('/[^0-9Xx]/', '', $isbn);
 
@@ -214,6 +224,11 @@ class BookController extends Controller
                 'encontrado' => false,
                 'mensaje' => 'Ingresa un ISBN válido (10 o 13 dígitos).',
             ], 422);
+        }
+
+        $cacheKey = "openlibrary_isbn_{$cleanIsbn}";
+        if (Cache::has($cacheKey)) {
+            return response()->json(Cache::get($cacheKey));
         }
 
         try {
@@ -252,15 +267,23 @@ class BookController extends Controller
                 ?? $payload['cover']['medium']
                 ?? "https://covers.openlibrary.org/b/isbn/{$cleanIsbn}-L.jpg";
 
-            return response()->json([
+            $enlaces = $interconnector->extraerEnlacesDesdeOpenLibrary($cleanIsbn, $payload);
+
+            $resultado = [
                 'encontrado' => true,
                 'titulo' => $payload['title'] ?? '',
                 'autor' => $autores,
                 'editorial' => $editoriales,
                 'anio_publicacion' => $anio,
                 'portada_url' => $portada,
+                'archivo_pdf' => $enlaces['archivo_pdf'],
+                'enlaces_lectura' => $enlaces['fuentes'],
                 'sinopsis' => $payload['notes'] ?? ($payload['subtitle'] ?? ''),
-            ]);
+            ];
+
+            Cache::put($cacheKey, $resultado, now()->addDays(7));
+
+            return response()->json($resultado);
         } catch (\Throwable) {
             return response()->json([
                 'encontrado' => false,
@@ -269,13 +292,19 @@ class BookController extends Controller
         }
     }
 
-    private function prepararDatosLibro(BookRequest $request, ?Book $book = null): array
-    {
+    private function prepararDatosLibro(
+        BookRequest $request,
+        ?Book $book = null,
+        ?BookLinkInterconnectorService $interconnector = null
+    ): array {
         $datos = collect($request->validated())->except(['portada_file', 'pdf_file'])->toArray();
 
         if ($request->hasFile('portada_file')) {
             $path = $request->file('portada_file')->store('covers', 'public');
             $datos['portada_url'] = '/storage/' . ltrim($path, '/');
+            if ($book) {
+                $this->eliminarArchivoPublicoSiLocal($book->portada_url);
+            }
         } elseif ($book && empty($datos['portada_url'])) {
             $datos['portada_url'] = $book->portada_url;
         }
@@ -283,10 +312,32 @@ class BookController extends Controller
         if ($request->hasFile('pdf_file')) {
             $path = $request->file('pdf_file')->store('pdfs', 'public');
             $datos['archivo_pdf'] = '/storage/' . ltrim($path, '/');
+            if ($book) {
+                $this->eliminarArchivoPublicoSiLocal($book->archivo_pdf);
+            }
         } elseif ($book && empty($datos['archivo_pdf'])) {
             $datos['archivo_pdf'] = $book->archivo_pdf;
         }
 
+        if (empty($datos['archivo_pdf']) && $interconnector) {
+            $datos['archivo_pdf'] = $interconnector->construirUrlLecturaPorDefecto(
+                (string) ($datos['isbn'] ?? ''),
+                (string) ($datos['titulo'] ?? '')
+            );
+        }
+
         return $datos;
+    }
+
+    private function eliminarArchivoPublicoSiLocal(?string $ruta): void
+    {
+        if (! $ruta || ! str_starts_with($ruta, '/storage/')) {
+            return;
+        }
+
+        $relativo = ltrim(substr($ruta, strlen('/storage/')), '/');
+        if ($relativo !== '' && ! str_contains($relativo, '..')) {
+            Storage::disk('public')->delete($relativo);
+        }
     }
 }

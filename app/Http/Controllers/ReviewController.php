@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\SubmitBookReviewAction;
 use App\Models\Book;
 use App\Models\Review;
 use Illuminate\Http\RedirectResponse;
@@ -24,7 +25,7 @@ class ReviewController extends Controller
         return view('admin.reviews.index', compact('reviews', 'estado'));
     }
 
-    public function store(Request $request, Book $book): RedirectResponse
+    public function store(Request $request, Book $book, SubmitBookReviewAction $action): RedirectResponse
     {
         $datos = $request->validate([
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
@@ -32,31 +33,17 @@ class ReviewController extends Controller
             'es_spoiler' => ['nullable', 'boolean'],
         ]);
 
-        $user = $request->user();
-        $yaExistia = Review::where('book_id', $book->id)
-            ->where('user_id', $user->id)
-            ->exists();
-
-        $review = Review::updateOrCreate(
-            ['book_id' => $book->id, 'user_id' => $user->id],
-            [
-                'rating' => $datos['rating'],
-                'comentario' => $datos['comentario'],
-                'es_spoiler' => $request->boolean('es_spoiler'),
-                'visible' => true,
-            ]
+        $resultado = $action->execute(
+            $book,
+            $request->user(),
+            (int) $datos['rating'],
+            $datos['comentario'],
+            $request->boolean('es_spoiler')
         );
 
-        $bonusMsg = '';
-        if (! $yaExistia && $user->reader) {
-            $user->reader->registrarKarma(
-                10,
-                "Primera reseña en «{$book->titulo}»",
-                'review',
-                $review->id
-            );
-            $bonusMsg = ' (+10 Puntos Nova por tu primera reseña de esta obra)';
-        }
+        $bonusMsg = $resultado['karma_awarded'] > 0
+            ? " (+{$resultado['karma_awarded']} Puntos Nova por tu primera reseña de esta obra)"
+            : '';
 
         return back()->with('success', '⭐ ¡Gracias! Tu reseña fue publicada en la comunidad' . $bonusMsg . '.');
     }

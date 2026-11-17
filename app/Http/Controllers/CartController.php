@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Actions\CheckoutCartAction;
+use App\Http\Requests\CheckoutOrderRequest;
 use App\Models\Book;
 use App\Services\CartService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CartController extends Controller
@@ -93,37 +93,10 @@ class CartController extends Controller
         return back()->with('success', 'Obra retirada del carrito.');
     }
 
-    public function checkout(Request $request, CheckoutCartAction $action): RedirectResponse
+    public function checkout(CheckoutOrderRequest $request, CheckoutCartAction $action): RedirectResponse
     {
-        $rules = [
-            'metodo_pago' => ['required', 'in:yape_plin,tarjeta,mostrador,membresia'],
-            'codigo_operacion' => ['nullable', 'string', 'max:60'],
-            'tipo_entrega' => ['required', 'in:tienda,delivery'],
-            'direccion_entrega' => ['nullable', 'required_if:tipo_entrega,delivery', 'string', 'max:255'],
-            'usar_karma' => ['nullable', 'boolean'],
-        ];
-
-        if ($request->input('metodo_pago') === 'tarjeta') {
-            $rules['card_number'] = ['required', 'string', 'min:12', 'max:24'];
-            $rules['card_expiry'] = ['required', 'string', 'min:4', 'max:7'];
-            $rules['card_cvv'] = ['required', 'string', 'min:3', 'max:4'];
-        }
-
-        $datos = $request->validate($rules, [
-            'direccion_entrega.required_if' => 'Ingresa la dirección de envío en Lima / Perú para modalidad delivery.',
-        ]);
-
-        if ($datos['metodo_pago'] === 'tarjeta') {
-            $digits = preg_replace('/\D/', '', (string) $request->input('card_number', ''));
-            if (strlen($digits) < 12) {
-                throw ValidationException::withMessages([
-                    'card_number' => 'Número de tarjeta inválido en pasarela sandbox.',
-                ]);
-            }
-        }
-
         $items = $this->cart->items();
-        $order = $action->execute($items, $request->user(), $datos);
+        $order = $action->execute($items, $request->user(), $request->validated());
         $this->cart->clear();
 
         $msg = $order->estado_pago === 'pagado'
