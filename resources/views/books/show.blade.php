@@ -62,7 +62,7 @@
             </div>
         </div>
 
-        <!-- Información + Precios Reales Accionables + Acciones -->
+        <!-- Información y Acciones -->
         <div class="lg:col-span-8 p-6 sm:p-10 flex flex-col justify-between">
             <div>
                 <div class="flex flex-wrap items-center gap-2 mb-3">
@@ -99,25 +99,6 @@
                 <p class="text-base sm:text-lg font-bold text-slate-300 mt-1">
                     ✍️ Autor: <span class="text-amber-300">{{ $book->autor }}</span>
                 </p>
-
-                <!-- Bloque de Modalidades Comerciales -->
-                <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div class="bg-emerald-950/50 border border-emerald-500/30 rounded-2xl p-3.5">
-                        <span class="block text-[10px] font-black uppercase text-emerald-300">Con Club Activo</span>
-                        <span class="text-xl font-black text-white">S/ 0.00</span>
-                        <span class="block text-[11px] text-emerald-200/80">Incluido en Plan Estudiante / Pro</span>
-                    </div>
-                    <div class="bg-slate-950/90 border border-amber-400/30 rounded-2xl p-3.5">
-                        <span class="block text-[10px] font-black uppercase text-amber-300">Alquiler Individual</span>
-                        <span class="text-xl font-black text-amber-400">S/ {{ number_format((float) $book->precio_alquiler, 2) }}</span>
-                        <span class="block text-[11px] text-slate-300">7, 14 o 30 días · Ticket QR</span>
-                    </div>
-                    <div class="bg-slate-950/90 border border-sky-400/40 rounded-2xl p-3.5">
-                        <span class="block text-[10px] font-black uppercase text-sky-300">Compra Directa (Tuya para siempre)</span>
-                        <span class="text-xl font-black text-white">S/ {{ number_format((float) $book->precio_venta, 2) }}</span>
-                        <span class="block text-[11px] text-slate-300">Edición nueva sellada / envío o recojo</span>
-                    </div>
-                </div>
 
                 @if(! $book->estaDisponible() && $proximaDevolucion)
                     <div class="mt-3 rounded-xl bg-amber-950/40 border border-amber-500/30 px-4 py-2.5 text-xs text-amber-200">
@@ -157,16 +138,38 @@
                 </div>
             </div>
 
-            <!-- Botones de Acción Principal -->
-            <div class="mt-6 pt-5 border-t border-slate-800 flex flex-wrap items-center gap-2.5">
+            <!-- Lectura y préstamo como acciones principales -->
+            <div class="mt-6 pt-5 border-t border-slate-800 space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    @if($book->archivo_pdf)
+                        <a href="#visor-virtual"
+                           class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm px-5 py-3 rounded-xl shadow-lg shadow-amber-500/20 transition">
+                            📖 Leer Obra Completa Ahora
+                        </a>
+                    @else
+                        <a href="#visor-virtual"
+                           class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm px-5 py-3 rounded-xl shadow-lg shadow-amber-500/20 transition">
+                            📖 Ver Muestra de Lectura
+                        </a>
+                    @endif
+
+                    @if($book->estaDisponible())
+                        <a href="{{ route('loans.create', ['book_id' => $book->id]) }}"
+                           class="inline-flex items-center justify-center gap-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/50 text-emerald-200 font-extrabold text-sm px-5 py-3 rounded-xl transition">
+                            📚 Solicitar Préstamo Físico Gratis
+                        </a>
+                    @endif
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
                 @if($book->estaDisponible())
                     @auth
                         <form action="{{ route('cart.add', $book) }}" method="POST" class="js-cart-add-form">
                             @csrf
                             <input type="hidden" name="tipo_operacion" value="venta">
                             <button type="submit" data-no-loading="true"
-                                    class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm px-5 py-3 rounded-xl shadow-lg transition">
-                                🛒 Comprar S/ {{ number_format((float) $book->precio_venta, 2) }}
+                                    class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 font-bold text-xs px-4 py-2.5 rounded-xl transition">
+                                🛒 Comprar
                             </button>
                         </form>
 
@@ -175,16 +178,11 @@
                             <input type="hidden" name="tipo_operacion" value="alquiler">
                             <input type="hidden" name="duracion_dias" value="7">
                             <button type="submit" data-no-loading="true"
-                                    class="bg-slate-800 hover:bg-slate-700 border border-amber-400/50 text-amber-300 font-extrabold text-sm px-4 py-3 rounded-xl transition">
-                                + Alquiler al Carrito
+                                    class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 font-bold text-xs px-4 py-2.5 rounded-xl transition">
+                                + Añadir alquiler al carrito
                             </button>
                         </form>
                     @endauth
-
-                    <a href="{{ route('loans.create', ['book_id' => $book->id]) }}"
-                       class="bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm px-5 py-3 rounded-xl shadow-lg transition">
-                        🔥 Alquilar Ahora (QR)
-                    </a>
                 @else
                     @auth
                         @if(auth()->user()->reader)
@@ -212,24 +210,26 @@
                         </a>
                     @endauth
                 @endif
-
-                <button type="button" onclick="document.getElementById('visor-virtual').scrollIntoView({behavior: 'smooth'})"
-                        class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-sm px-4 py-3 rounded-xl transition">
-                    📖 Muestra
-                </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- VISOR INTERACTIVO DE MUESTRA EDITORIAL / PDF -->
-<div id="visor-virtual" class="rounded-3xl border border-slate-800 bg-slate-950 text-slate-100 p-6 sm:p-8 shadow-2xl mb-10">
+<!-- VISOR DE LECTURA -->
+<div id="visor-virtual" class="scroll-mt-24 rounded-3xl border border-slate-800 bg-slate-950 text-slate-100 p-6 sm:p-8 shadow-2xl mb-10">
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-800">
         <div class="flex items-center gap-3">
             <span class="text-2xl">🖥️</span>
             <div>
-                <h2 class="text-base font-extrabold text-amber-400">NOVAETHER™ Preview Reader</h2>
-                <p class="text-xs text-slate-300">Muestra interactiva de «{{ $book->titulo }}» · Progreso guardado localmente</p>
+                <h2 class="text-base font-extrabold text-amber-400">Lector NOVAETHER™</h2>
+                <p class="text-xs text-slate-300">
+                    @if($book->archivo_pdf)
+                        Lectura digital de «{{ $book->titulo }}»
+                    @else
+                        No hay enlace de lectura completa para esta obra; aquí puedes consultar una muestra.
+                    @endif
+                </p>
             </div>
         </div>
 
@@ -250,7 +250,7 @@
     @if($book->esPdfEmbeddable())
         <div id="lector-pdf-panel" class="mt-4">
             <div class="rounded-2xl overflow-hidden border border-slate-800 bg-slate-900">
-                <iframe src="{{ $book->archivo_pdf }}" title="Muestra PDF de {{ $book->titulo }}" class="w-full h-[480px] sm:h-[600px]"></iframe>
+                <iframe src="{{ $book->archivo_pdf }}" title="Obra completa: {{ $book->titulo }}" class="w-full h-[480px] sm:h-[600px]"></iframe>
             </div>
             <div class="mt-2 flex justify-end">
                 <a href="{{ $book->archivo_pdf }}" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-amber-400 hover:underline">
@@ -308,6 +308,66 @@
         </div>
     </div>
 </div>
+
+<!-- RED DE OBRAS INTERCONECTADAS -->
+@if($relacionados->isNotEmpty())
+    @php
+        $networkTotal = $relacionados->count();
+        $networkFirstPosition = 125;
+        $networkLastPosition = $networkFirstPosition + (250 * ($networkTotal - 1));
+        $networkRailStart = min(500, $networkFirstPosition);
+        $networkRailEnd = max(500, $networkLastPosition);
+    @endphp
+    <section class="mb-10 rounded-3xl border border-slate-800 bg-slate-900/90 p-6 sm:p-8 shadow-2xl" aria-labelledby="related-network-title">
+        <div class="mb-6 text-center">
+            <h2 id="related-network-title" class="text-xl font-extrabold text-white">🕸️ Red de Obras Interconectadas</h2>
+            <p class="mt-1 text-xs text-slate-300">Explora títulos relacionados de la misma categoría.</p>
+        </div>
+
+        <div class="mx-auto max-w-sm rounded-2xl border border-amber-400/50 bg-slate-950 px-4 py-3 text-center shadow-lg shadow-amber-500/10">
+            <span class="text-[10px] font-black uppercase tracking-wider text-amber-300">Obra actual</span>
+            <p class="mt-1 text-sm font-extrabold text-white">{{ $book->titulo }}</p>
+            <p class="text-xs text-slate-300">{{ $book->autor }}</p>
+        </div>
+
+        <div class="relative mx-auto hidden h-14 max-w-5xl lg:block" aria-hidden="true">
+            <svg viewBox="0 0 1000 60" preserveAspectRatio="none" class="h-full w-full">
+                <g fill="none" stroke="rgba(251,191,36,0.55)" stroke-width="2">
+                    <line x1="500" y1="0" x2="500" y2="20" />
+                    <line x1="{{ $networkRailStart }}" y1="20" x2="{{ $networkRailEnd }}" y2="20" />
+                    @foreach($relacionados as $rel)
+                        @php $networkPosition = $networkFirstPosition + (250 * ($loop->iteration - 1)); @endphp
+                        <line x1="{{ $networkPosition }}" y1="20" x2="{{ $networkPosition }}" y2="60" />
+                    @endforeach
+                </g>
+            </svg>
+        </div>
+        <div class="mx-auto h-7 w-px bg-amber-400/50 lg:hidden" aria-hidden="true"></div>
+
+        <div class="relative ml-5 grid grid-cols-1 gap-3 border-l border-amber-400/30 pl-5 sm:ml-0 sm:grid-cols-2 sm:gap-4 sm:border-0 sm:pl-0 lg:grid-cols-4">
+            @foreach($relacionados as $rel)
+                <a href="{{ route('books.show', $rel) }}" class="relative flex gap-3 rounded-2xl border border-slate-800 bg-slate-950 p-4 shadow-lg transition hover:border-amber-400/60">
+                    <span class="absolute -left-[1.32rem] top-7 w-5 border-t border-amber-400/40 sm:hidden" aria-hidden="true"></span>
+                    <span class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-amber-400/40 bg-amber-400/10 text-xs font-black text-amber-300 sm:hidden" aria-hidden="true">{{ $loop->iteration }}</span>
+                    <div class="h-24 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-slate-900">
+                        @if($rel->portada_url)
+                            <img src="{{ $rel->portada_url }}" alt="Portada de {{ $rel->titulo }}" class="h-full w-full object-cover">
+                        @else
+                            <div class="flex h-full items-center justify-center text-2xl">📚</div>
+                        @endif
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="line-clamp-2 text-sm font-bold text-white">{{ $rel->titulo }}</h3>
+                        <p class="mt-0.5 truncate text-xs text-slate-300">{{ $rel->autor }}</p>
+                        <span class="mt-2 inline-block rounded px-2 py-0.5 text-[10px] font-black {{ $rel->estaDisponible() ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-200' }}">
+                            {{ $rel->estaDisponible() ? $rel->stock_disponible . ' disp.' : 'Agotado' }}
+                        </span>
+                    </div>
+                </a>
+            @endforeach
+        </div>
+    </section>
+@endif
 
 <!-- COMUNIDAD Y RESEÑAS VERIFICADAS -->
 <div class="bg-slate-900/95 rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-2xl mb-10">
@@ -433,31 +493,6 @@
         </div>
     </div>
 </div>
-
-<!-- OBRAS RELACIONADAS -->
-@if($relacionados->isNotEmpty())
-<div>
-    <h2 class="text-lg font-extrabold text-white mb-4">✨ Más títulos en {{ $book->category->icono }} {{ $book->category->nombre }}</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        @foreach($relacionados as $rel)
-            <a href="{{ route('books.show', $rel) }}" class="bg-slate-900 rounded-2xl border border-slate-800 hover:border-amber-400/50 p-4 transition flex gap-3 shadow-lg">
-                <div class="w-16 h-24 rounded-lg overflow-hidden bg-slate-950 flex-shrink-0">
-                    @if($rel->portada_url)
-                        <img src="{{ $rel->portada_url }}" alt="{{ $rel->titulo }}" class="w-full h-full object-cover">
-                    @endif
-                </div>
-                <div class="min-w-0">
-                    <h3 class="font-bold text-sm text-white line-clamp-2">{{ $rel->titulo }}</h3>
-                    <p class="text-xs text-slate-300 mt-0.5 truncate">{{ $rel->autor }}</p>
-                    <span class="inline-block mt-2 text-[10px] font-black px-2 py-0.5 rounded {{ $rel->estaDisponible() ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-200' }}">
-                        {{ $rel->estaDisponible() ? $rel->stock_disponible . ' disp.' : 'Agotado' }}
-                    </span>
-                </div>
-            </a>
-        @endforeach
-    </div>
-</div>
-@endif
 
 <script>
 let tamanoFuente = 16;
