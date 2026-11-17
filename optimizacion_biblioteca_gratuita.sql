@@ -1,17 +1,6 @@
 USE biblioteca_bd;
 
-SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS payments;
-DROP TABLE IF EXISTS subscriptions;
-DROP TABLE IF EXISTS plans;
-DROP TABLE IF EXISTS reading_logs;   -- se recrea más abajo con user_id opcional
-SET FOREIGN_KEY_CHECKS = 1;
-
-DROP INDEX IF EXISTS books_categoria_nivel_idx ON books;
-DROP INDEX IF EXISTS books_nivel_idx ON books;
-ALTER TABLE books DROP COLUMN IF EXISTS nivel_acceso;
-
--- Primero order_items (depende de orders y de loans), luego orders
+-- Primero order_items (depende de orders, books y loans), luego orders
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;
@@ -56,6 +45,8 @@ SET b.rating_promedio = COALESCE(r.prom, 0),
     b.total_resenas   = COALESCE(r.total, 0);
 
 -- Tipo de lector: solo estudiante, docente o publico
+-- (si la columna no existe se crea; si se llama distinto, ajusta el nombre)
+ALTER TABLE readers ADD COLUMN IF NOT EXISTS tipo VARCHAR(20) NOT NULL DEFAULT 'publico';
 ALTER TABLE readers MODIFY COLUMN tipo VARCHAR(20) NOT NULL DEFAULT 'publico';
 UPDATE readers SET tipo = 'publico' WHERE tipo NOT IN ('estudiante','docente','publico');
 ALTER TABLE readers MODIFY COLUMN tipo ENUM('estudiante','docente','publico') NOT NULL DEFAULT 'publico';
