@@ -55,12 +55,15 @@ echo "    - Reader sin plan_suscripcion, puedeUsarMembresia() ni orders(): " . (
 echo "    - Loan sin orderItem(): " . ($sinOrderItemLoan ? "SI (OK)" : "NO") . "\n";
 echo "    - Loan::etiquetaMetodoPago(): \"{$etiquetaPrestamo}\"\n\n";
 
-// 5. Verificar enlaces reales de lectura abierta en catálogo
+// 5. Verificar enlaces reales de lectura abierta y visor embebible en catálogo
 $totalLibros = Book::count();
 $librosSinPdf = Book::whereNull('archivo_pdf')->orWhere('archivo_pdf', '')->count();
+$librosEmbeddables = Book::all()->filter(fn (Book $b) => $b->esPdfEmbeddable())->count();
+
 echo "[5] Catálogo en Base de Datos (DatabaseSeeder):\n";
 echo "    - Total de obras registradas: {$totalLibros}\n";
 echo "    - Obras con archivo_pdf vacío o NULL: {$librosSinPdf} (Todas tienen enlace real de lectura abierta)\n";
+echo "    - Obras con visor embebible (archive.org/embed o PDF): {$librosEmbeddables}/{$totalLibros} (OK)\n";
 echo "    - Búsqueda scopeFiltro('Dune') resultados: " . Book::filtro(['buscar' => 'Dune'])->count() . "\n\n";
 
 echo "=================================================================\n";

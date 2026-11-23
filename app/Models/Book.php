@@ -105,7 +105,21 @@ class Book extends Model
 
         return str_starts_with($this->archivo_pdf, '/storage/')
             || str_contains($this->archivo_pdf, 'archive.org/embed/')
+            || str_contains($this->archivo_pdf, 'archive.org/details/')
             || str_ends_with(strtolower(parse_url($this->archivo_pdf, PHP_URL_PATH) ?? ''), '.pdf');
+    }
+
+    public function getVisorEmbedUrlAttribute(): ?string
+    {
+        if (! $this->archivo_pdf) {
+            return null;
+        }
+
+        if (str_contains($this->archivo_pdf, 'archive.org/details/')) {
+            return str_replace('archive.org/details/', 'archive.org/embed/', $this->archivo_pdf);
+        }
+
+        return $this->archivo_pdf;
     }
 
     public function scopeFiltro(Builder $query, array $filtros): Builder
