@@ -13,7 +13,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BookController extends Controller
 {
@@ -42,16 +44,16 @@ class BookController extends Controller
             ]);
         }
 
-        $categories = Category::withCount('books')->orderBy('id')->get();
+        $categories = Cache::remember('catalog_categories_with_count', 300, fn () => Category::withCount('books')->orderBy('id')->get());
 
-        $stats = [
+        $stats = Cache::remember('catalog_home_stats', 300, fn () => [
             'total_titulos' => Book::count(),
             'total_ejemplares' => Book::sum('stock_total'),
             'disponibles_ahora' => Book::sum('stock_disponible'),
             'categorias_activas' => Category::count(),
-        ];
+        ]);
 
-        $showcaseTabs = [
+        $showcaseTabs = Cache::remember('catalog_showcase_tabs', 300, fn () => [
             'valorados' => Book::with('category')
                 ->withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
                 ->withCount(['reviews' => fn ($q) => $q->where('visible', true)])
@@ -71,7 +73,7 @@ class BookController extends Controller
                 ->whereHas('category', fn ($q) => $q->where('nombre', 'like', '%Tecnología%')->orWhere('nombre', 'like', '%Negocios%')->orWhere('nombre', 'like', '%Desarrollo%'))
                 ->take(5)
                 ->get(),
-        ];
+        ]);
 
         return view('books.index', compact(
             'books',
@@ -118,25 +120,6 @@ class BookController extends Controller
                 ->value('fecha_devolucion_esperada')
             : null;
 
-        $terminoBusqueda = rawurlencode(trim($book->titulo.' '.$book->autor));
-        $tituloBusqueda = rawurlencode($book->titulo);
-        $enlacesLectura = [
-            'fuentes' => [
-                [
-                    'nombre' => 'Open Library',
-                    'url' => "https://openlibrary.org/search?q={$terminoBusqueda}",
-                ],
-                [
-                    'nombre' => 'Internet Archive',
-                    'url' => "https://archive.org/search?query={$terminoBusqueda}",
-                ],
-                [
-                    'nombre' => 'Project Gutenberg',
-                    'url' => "https://www.gutenberg.org/ebooks/search/?query={$tituloBusqueda}",
-                ],
-            ],
-        ];
-
         $miWaitlist = null;
         $miPosicionCola = null;
         $esFavorito = false;
@@ -168,12 +151,29 @@ class BookController extends Controller
             'enlacesLectura',
             'waitlistCount',
             'proximaDevolucion',
-            'enlacesLectura',
             'miWaitlist',
             'miPosicionCola',
             'esFavorito',
             'miResena'
         ));
+    }
+
+    public function download(Book $book, BookLinkInterconnectorService $interconnector): StreamedResponse|RedirectResponse
+    {
+        $archivo = trim((string) $book->archivo_pdf);
+
+        if ($archivo !== '' && str_starts_with($archivo, '/storage/')) {
+            $relativo = ltrim(substr($archivo, strlen('/storage/')), '/');
+            if ($relativo !== '' && ! str_contains($relativo, '..') && Storage::disk('public')->exists($relativo)) {
+                $nombreDescarga = (Str::slug($book->titulo) ?: 'obra-' . $book->id) . '.pdf';
+
+                return Storage::disk('public')->download($relativo, $nombreDescarga);
+            }
+        }
+
+        $enlaces = $interconnector->resolverEnlacesLectura($book);
+
+        return redirect()->away($enlaces['principal_url']);
     }
 
     public function create(): View
@@ -190,6 +190,7 @@ class BookController extends Controller
         $datos['precio_venta'] = $datos['precio_venta'] ?? 0.00;
 
         Book::create($datos);
+        $this->limpiarCacheCatalogo();
 
         return redirect()
             ->route('books.index')
@@ -211,6 +212,7 @@ class BookController extends Controller
         $datos['precio_venta'] = $datos['precio_venta'] ?? $book->precio_venta;
 
         $book->update($datos);
+        $this->limpiarCacheCatalogo();
 
         return redirect()
             ->route('books.index')
@@ -219,13 +221,14 @@ class BookController extends Controller
 
     public function destroy(Book $book): RedirectResponse
     {
-        if ($book->loans()->exists() || $book->orderItems()->exists()) {
-            return back()->with('error', 'No se puede eliminar esta obra porque tiene historial de préstamos o ventas asociadas.');
+        if ($book->loans()->exists() || (method_exists($book, 'orderItems') && $book->orderItems()->exists())) {
+            return back()->with('error', 'No se puede eliminar esta obra porque tiene historial de préstamos asociados.');
         }
 
         $portada = $book->portada_url;
         $pdf = $book->archivo_pdf;
         $book->delete();
+        $this->limpiarCacheCatalogo();
 
         $this->eliminarArchivoPublicoSiLocal($portada);
         $this->eliminarArchivoPublicoSiLocal($pdf);
@@ -321,28 +324,20 @@ class BookController extends Controller
 
         if ($request->hasFile('portada_file')) {
             $path = $request->file('portada_file')->store('covers', 'public');
-<<<<<<< HEAD
-            $datos['portada_url'] = '/storage/'.ltrim($path, '/');
-=======
             $datos['portada_url'] = '/storage/' . ltrim($path, '/');
             if ($book) {
                 $this->eliminarArchivoPublicoSiLocal($book->portada_url);
             }
->>>>>>> 6d8c502ff5b9138e3c2a623d4939551d091c89e4
         } elseif ($book && empty($datos['portada_url'])) {
             $datos['portada_url'] = $book->portada_url;
         }
 
         if ($request->hasFile('pdf_file')) {
             $path = $request->file('pdf_file')->store('pdfs', 'public');
-<<<<<<< HEAD
-            $datos['archivo_pdf'] = '/storage/'.ltrim($path, '/');
-=======
             $datos['archivo_pdf'] = '/storage/' . ltrim($path, '/');
             if ($book) {
                 $this->eliminarArchivoPublicoSiLocal($book->archivo_pdf);
             }
->>>>>>> 6d8c502ff5b9138e3c2a623d4939551d091c89e4
         } elseif ($book && empty($datos['archivo_pdf'])) {
             $datos['archivo_pdf'] = $book->archivo_pdf;
         }
@@ -355,6 +350,14 @@ class BookController extends Controller
         }
 
         return $datos;
+    }
+
+    private function limpiarCacheCatalogo(): void
+    {
+        Cache::forget('catalog_categories_with_count');
+        Cache::forget('catalog_home_stats');
+        Cache::forget('catalog_showcase_tabs');
+        Cache::forget('nav_categories');
     }
 
     private function eliminarArchivoPublicoSiLocal(?string $ruta): void

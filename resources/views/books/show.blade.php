@@ -161,6 +161,17 @@
                     @endif
                 </div>
 
+                <div class="flex flex-wrap items-center gap-2 pt-1">
+                    <a href="{{ route('books.download', $book) }}"
+                       class="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 text-xs font-bold px-3.5 py-2 rounded-xl transition">
+                        ⬇️ Acceso / Descarga Digital Gratuita
+                    </a>
+                    <a href="{{ route('complaints.create', ['obra' => $book->titulo]) }}"
+                       class="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-amber-300 text-xs font-semibold px-3.5 py-2 rounded-xl transition">
+                        🚩 Reportar enlace roto o sugerir edición
+                    </a>
+                </div>
+
                 @if(! $book->estaDisponible())
                     <div class="flex flex-wrap items-center gap-2">
                     @auth

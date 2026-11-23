@@ -160,13 +160,6 @@
                                 @endif
 
                                 @if(auth()->user()->esAdmin())
-                                    @if($loan->pagoPendiente())
-                                        <form action="{{ route('loans.anular', $loan) }}" method="POST" class="inline" data-confirm="¿Anular reserva #{{ $loan->id }} y liberar stock?">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="text-xs font-bold text-amber-300 hover:underline px-1">Anular</button>
-                                        </form>
-                                    @endif
                                     <form action="{{ route('loans.destroy', $loan) }}" method="POST" class="inline"
                                           data-confirm="¿Eliminar permanentemente el registro de préstamo #{{ $loan->id }}?">
                                         @csrf

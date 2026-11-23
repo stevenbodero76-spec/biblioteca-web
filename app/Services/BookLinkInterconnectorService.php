@@ -177,30 +177,14 @@ class BookLinkInterconnectorService
                         ->orWhere('sinopsis', 'like', "%{$palabra}%");
                 }
             })
+            ->orderByRaw(
+                'CASE WHEN LOWER(autor) = ? THEN 50 ELSE 0 END + CASE WHEN category_id = ? THEN 30 ELSE 0 END + CASE WHEN stock_disponible > 0 THEN 5 ELSE 0 END DESC',
+                [mb_strtolower((string) $book->autor), (int) $book->category_id]
+            )
+            ->limit($limite)
             ->get();
 
         return $candidatos
-            ->sortByDesc(function (Book $item) use ($book, $palabrasClave) {
-                $score = 0;
-                if (mb_strtolower($item->autor) === mb_strtolower($book->autor)) {
-                    $score += 50;
-                }
-                if ((int) $item->category_id === (int) $book->category_id) {
-                    $score += 30;
-                }
-                foreach ($palabrasClave as $palabra) {
-                    if (str_contains(mb_strtolower($item->titulo . ' ' . $item->sinopsis), $palabra)) {
-                        $score += 10;
-                    }
-                }
-                if ($item->estaDisponible()) {
-                    $score += 5;
-                }
-
-                return $score;
-            })
-            ->take($limite)
-            ->values()
             ->map(function (Book $item) {
                 $enlaces = $this->resolverEnlacesLectura($item);
                 $item->setAttribute('enlace_lectura_directa', $enlaces['principal_url']);
