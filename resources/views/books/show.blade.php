@@ -43,7 +43,7 @@
         <div class="lg:col-span-4 bg-gradient-to-br from-slate-950 to-slate-900 p-8 flex flex-col items-center justify-center text-white border-b lg:border-b-0 lg:border-r border-slate-800">
             <div class="w-52 sm:w-60 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-400/30 bg-slate-900 flex items-center justify-center">
                 @if($book->portada_url)
-                    <img src="{{ $book->portada_url }}" alt="Portada de {{ $book->titulo }}" class="w-full h-full object-cover"
+                    <img src="{{ $book->portada_url }}" alt="Portada de {{ $book->titulo }}" loading="lazy" class="w-full h-full object-cover"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="hidden w-full h-full items-center justify-center text-6xl bg-slate-900">📚</div>
                 @else
@@ -161,29 +161,8 @@
                     @endif
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2">
-                @if($book->estaDisponible())
-                    @auth
-                        <form action="{{ route('cart.add', $book) }}" method="POST" class="js-cart-add-form">
-                            @csrf
-                            <input type="hidden" name="tipo_operacion" value="venta">
-                            <button type="submit" data-no-loading="true"
-                                    class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 font-bold text-xs px-4 py-2.5 rounded-xl transition">
-                                🛒 Comprar
-                            </button>
-                        </form>
-
-                        <form action="{{ route('cart.add', $book) }}" method="POST" class="js-cart-add-form">
-                            @csrf
-                            <input type="hidden" name="tipo_operacion" value="alquiler">
-                            <input type="hidden" name="duracion_dias" value="7">
-                            <button type="submit" data-no-loading="true"
-                                    class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 font-bold text-xs px-4 py-2.5 rounded-xl transition">
-                                + Añadir alquiler al carrito
-                            </button>
-                        </form>
-                    @endauth
-                @else
+                @if(! $book->estaDisponible())
+                    <div class="flex flex-wrap items-center gap-2">
                     @auth
                         @if(auth()->user()->reader)
                             @if($miWaitlist)
@@ -209,12 +188,26 @@
                             🔔 Inicia sesión para Lista de Espera
                         </a>
                     @endauth
+                    </div>
                 @endif
-                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- FUENTES ABIERTAS DE LECTURA -->
+<section class="mb-8 rounded-3xl border border-slate-800 bg-slate-900/90 p-6 sm:p-8 shadow-xl" aria-labelledby="open-reading-sources-title">
+    <h2 id="open-reading-sources-title" class="text-lg font-extrabold text-white">📚 Fuentes abiertas interconectadas</h2>
+    <p class="mt-1 text-xs text-slate-300">Busca esta obra en catálogos y bibliotecas digitales de acceso abierto. La disponibilidad depende de cada fuente.</p>
+    <div class="mt-4 flex flex-wrap gap-3">
+        @foreach($enlacesLectura['fuentes'] as $fuente)
+            <a href="{{ $fuente['url'] }}" target="_blank" rel="noopener noreferrer"
+               class="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-xs font-bold text-amber-300 transition hover:border-amber-400/60 hover:text-amber-200">
+                {{ $fuente['nombre'] }} ↗
+            </a>
+        @endforeach
+    </div>
+</section>
 
 <!-- VISOR DE LECTURA -->
 <div id="visor-virtual" class="scroll-mt-24 rounded-3xl border border-slate-800 bg-slate-950 text-slate-100 p-6 sm:p-8 shadow-2xl mb-10">
@@ -287,7 +280,7 @@
                 <p>
                     Esta edición forma parte del catálogo verificado de <strong>NOVAETHER™</strong>.
                     @if($book->estaDisponible())
-                        Contamos con <strong>{{ $book->stock_disponible }} unidad(es) disponible(s)</strong> en <em>{{ $book->ubicacion_estante }}</em> para compra directa o alquiler inmediato.
+                        Hay <strong>{{ $book->stock_disponible }} unidad(es) disponible(s)</strong> en <em>{{ $book->ubicacion_estante }}</em> para préstamo gratuito.
                     @else
                         Todas las unidades ({{ $book->stock_total }}) están actualmente reservadas. Únete a la cola de espera para recibir prioridad al liberarse una copia.
                     @endif
@@ -295,9 +288,9 @@
             </div>
 
             <div id="pagina-2" class="hidden space-y-4 leading-loose">
-                <p class="font-bold text-amber-400 text-sm uppercase">Fragmento 02 — Garantía &amp; Beneficios Nova</p>
+                <p class="font-bold text-amber-400 text-sm uppercase">Fragmento 02 — Lectura compartida</p>
                 <p>
-                    Cada ejemplar físico de <strong>NOVAETHER™</strong> pasa por control <em>Mint Condition</em>. Al devolver tus alquileres puntualmente acumulas <strong>+25 Puntos Nova</strong> canjeables como descuento directo en tu carrito.
+                    Cuidar y devolver puntualmente los ejemplares de <strong>NOVAETHER™</strong> ayuda a que más lectores puedan acceder a ellos.
                 </p>
             </div>
 
@@ -351,7 +344,7 @@
                     <span class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-amber-400/40 bg-amber-400/10 text-xs font-black text-amber-300 sm:hidden" aria-hidden="true">{{ $loop->iteration }}</span>
                     <div class="h-24 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-slate-900">
                         @if($rel->portada_url)
-                            <img src="{{ $rel->portada_url }}" alt="Portada de {{ $rel->titulo }}" class="h-full w-full object-cover">
+                            <img src="{{ $rel->portada_url }}" alt="Portada de {{ $rel->titulo }}" loading="lazy" class="h-full w-full object-cover">
                         @else
                             <div class="flex h-full items-center justify-center text-2xl">📚</div>
                         @endif

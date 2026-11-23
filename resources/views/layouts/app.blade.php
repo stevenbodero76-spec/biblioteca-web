@@ -17,9 +17,9 @@
 </head>
 <body class="text-slate-100 min-h-screen flex flex-col selection:bg-amber-400 selection:text-slate-950">
 
-    <!-- Cintillo comercial superior -->
+    <!-- Cintillo superior -->
     <div class="no-print bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 text-slate-950 text-xs font-extrabold py-2 px-4 text-center tracking-wide shadow-sm">
-        ⚡ NOVAETHER™ PERÚ · Compra Directa y Alquiler · Pagos Digitales / Tarjeta + Tickets QR + Canje de Puntos Nova
+        Biblioteca Pública &amp; Bóveda Digital 100% Gratuita
     </div>
 
     <!-- Barra de navegación principal -->
@@ -103,11 +103,6 @@
                                 {{ auth()->user()->esCliente() ? 'Tickets QR' : 'Préstamos' }}
                             </a>
 
-                            <a href="{{ route('orders.index') }}"
-                               class="px-2.5 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request()->routeIs('orders.*') ? 'bg-sky-400 text-slate-950 font-extrabold' : 'text-sky-300 hover:bg-slate-800' }}">
-                                {{ auth()->user()->esCliente() ? 'Pedidos' : 'Órdenes' }}
-                            </a>
-
                             @if(auth()->user()->esAdmin())
                                 <div class="relative group">
                                     <button type="button"
@@ -120,7 +115,6 @@
                                         <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 space-y-0.5">
                                             <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-emerald-300">📊 Dashboard Ejecutivo</a>
                                             <a href="{{ route('readers.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-emerald-300">👥 Clientes y Planes</a>
-                                            <a href="{{ route('orders.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-emerald-300">📦 Órdenes y Pagos</a>
                                             <a href="{{ route('admin.complaints.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-300">📖 Reclamaciones</a>
                                             <a href="{{ route('admin.waitlists.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-300">🔔 Listas de Espera</a>
                                             <a href="{{ route('admin.reviews.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-300">💬 Moderar Reseñas</a>
@@ -132,18 +126,9 @@
                     </nav>
                 </div>
 
-                <!-- Zona Derecha: Carrito + Cuenta + Botón Móvil -->
+                <!-- Zona Derecha: Cuenta + Botón Móvil -->
                 <div class="flex items-center gap-2">
                     @auth
-                        <a href="{{ route('cart.index') }}"
-                           class="relative inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-extrabold text-amber-300 transition"
-                           title="Carrito de compras y reservas">
-                            <span>🛒</span>
-                            <span id="nav-cart-badge" class="px-1.5 py-0.5 text-[10px] font-black rounded-full {{ ($cartCount ?? 0) > 0 ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-300' }}">
-                                {{ $cartCount ?? 0 }}
-                            </span>
-                        </a>
-
                         <a href="{{ route('profile.edit') }}" class="text-right hidden sm:block group">
                             <p class="text-xs font-bold text-white leading-none group-hover:text-amber-300 transition">{{ auth()->user()->name }}</p>
                             <div class="flex items-center justify-end gap-1.5 mt-1">
@@ -201,10 +186,8 @@
                 </details>
                 <a href="{{ route('books.index', ['formato' => 'digital']) }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800">Edición Digital</a>
                 @auth
-                    <a href="{{ route('cart.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">🛒 Mi Carrito ({{ $cartCount ?? 0 }})</a>
                     <a href="{{ route('favorites.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-rose-300 hover:bg-slate-800">❤️ Mi Estantería</a>
                     <a href="{{ route('loans.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">🎫 Tickets QR y Reservas</a>
-                    <a href="{{ route('orders.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-sky-300 hover:bg-slate-800">📦 Mis Pedidos</a>
                     <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800">👤 Mi Perfil y Karma</a>
                     @if(auth()->user()->esAdmin())
                         <div class="pt-2 mt-2 border-t border-slate-800 space-y-1">
@@ -299,25 +282,18 @@
     </footer>
 
     <!-- Barra Inferior Táctil App / WebView (Solo Móvil) -->
-    <nav class="no-print md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#090D16]/95 backdrop-blur-xl border-t border-slate-800 px-2 py-1.5 grid grid-cols-5 text-[10px] font-bold" aria-label="Menú inferior móvil">
+    <nav class="no-print md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#090D16]/95 backdrop-blur-xl border-t border-slate-800 px-2 py-1.5 grid grid-cols-4 text-[10px] font-bold" aria-label="Menú inferior móvil">
         <a href="{{ route('books.index') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('home', 'books.index') ? 'text-amber-400' : 'text-slate-300' }}">
             <span class="text-base leading-none mb-0.5">📚</span>
             <span>Catálogo</span>
-        </a>
-        <a href="{{ auth()->check() ? route('cart.index') : route('login') }}" class="relative flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('cart.*') ? 'text-amber-400' : 'text-slate-300' }}">
-            <span class="text-base leading-none mb-0.5">🛒</span>
-            <span>Carrito</span>
-            @auth
-                <span id="mobile-cart-badge" class="absolute top-0.5 right-3 px-1.5 rounded-full text-[9px] font-black {{ ($cartCount ?? 0) > 0 ? 'bg-amber-400 text-slate-950' : 'hidden' }}">{{ $cartCount ?? 0 }}</span>
-            @endauth
         </a>
         <a href="{{ auth()->check() ? route('favorites.index') : route('login') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('favorites.*') ? 'text-rose-400' : 'text-slate-300' }}">
             <span class="text-base leading-none mb-0.5">❤️</span>
             <span>Estantería</span>
         </a>
-        <a href="{{ auth()->check() ? route('orders.index') : route('login') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('orders.*', 'loans.*') ? 'text-amber-400' : 'text-slate-300' }}">
+        <a href="{{ auth()->check() ? route('loans.index') : route('login') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('loans.*') ? 'text-amber-400' : 'text-slate-300' }}">
             <span class="text-base leading-none mb-0.5">🎫</span>
-            <span>Pedidos</span>
+            <span>{{ auth()->check() && auth()->user()->esCliente() ? 'Tickets' : 'Préstamos' }}</span>
         </a>
         <a href="{{ auth()->check() ? (auth()->user()->esAdmin() ? route('dashboard') : route('profile.edit')) : route('login') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('profile.*', 'dashboard') ? 'text-emerald-400' : 'text-slate-300' }}">
             <span class="text-base leading-none mb-0.5">{{ auth()->check() && auth()->user()->esAdmin() ? '📊' : '👤' }}</span>
@@ -375,16 +351,6 @@
                     <p id="qv-sinopsis" class="text-xs text-slate-300 leading-relaxed max-h-28 overflow-y-auto"></p>
 
                     <div class="pt-3 flex flex-wrap gap-2 border-t border-slate-800">
-                        @auth
-                            <form id="qv-buy-form" action="#" method="POST" class="js-cart-add-form">
-                                @csrf
-                                <input type="hidden" name="tipo_operacion" value="venta">
-                                <button type="submit" id="qv-buy-btn" data-no-loading="true"
-                                        class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black px-3.5 py-2.5 rounded-xl transition shadow">
-                                    🛒 Comprar
-                                </button>
-                            </form>
-                        @endauth
                         <a id="qv-reserve-link" href="#" class="flex-1 text-center bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl transition shadow">
                             Reservar ahora
                         </a>

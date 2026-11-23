@@ -6,12 +6,9 @@
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
         <h1 class="text-2xl font-extrabold text-white">📊 Panel Ejecutivo &amp; Operaciones</h1>
-        <p class="text-sm text-slate-300">Finanzas, validación de pagos, inventario en vivo y atención postventa.</p>
+        <p class="text-sm text-slate-300">Inventario en vivo, préstamos y atención a lectores.</p>
     </div>
     <div class="flex flex-wrap gap-2">
-        <a href="{{ route('orders.index') }}" class="bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 text-xs font-bold px-3.5 py-2.5 rounded-xl transition">
-            📦 Órdenes ({{ $resumen['ordenes_mes'] }})
-        </a>
         <a href="{{ route('admin.complaints.index') }}" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 text-xs font-bold px-3.5 py-2.5 rounded-xl transition">
             📖 Reclamaciones ({{ $resumen['reclamos_abiertos'] }})
         </a>
@@ -27,20 +24,8 @@
     </div>
 </div>
 
-<!-- KPIs Financieros y Operativos -->
-<div class="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-    <div class="bg-gradient-to-br from-emerald-950/80 to-slate-900 rounded-2xl border border-emerald-500/40 p-4 shadow-lg col-span-2 lg:col-span-2">
-        <p class="text-[11px] font-extrabold uppercase text-emerald-300">Ingresos Verificados (Mes)</p>
-        <p class="text-3xl font-black text-white mt-1">S/ {{ number_format($resumen['ingresos_mes'], 2) }}</p>
-        <p class="text-xs text-emerald-300 font-bold mt-1">💵 Hoy: S/ {{ number_format($resumen['ingresos_hoy'], 2) }} · {{ $resumen['ordenes_mes'] }} orden(es) este mes</p>
-    </div>
-
-    <div class="bg-slate-900 rounded-2xl border border-amber-400/40 p-4 shadow-lg">
-        <p class="text-[11px] font-extrabold uppercase text-amber-300">Por Validar en Caja</p>
-        <p class="text-2xl font-black text-amber-400 mt-1">S/ {{ number_format($resumen['monto_por_validar'], 2) }}</p>
-        <p class="text-xs text-slate-300 mt-1">⏳ {{ $resumen['pagos_pendientes_count'] }} op. pendientes</p>
-    </div>
-
+<!-- KPIs de inventario y servicio -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <div class="bg-slate-900 rounded-2xl border border-slate-800 p-4 shadow-lg">
         <p class="text-[11px] font-extrabold uppercase text-slate-300">Stock / Títulos</p>
         <p class="text-2xl font-black text-white mt-1">{{ $resumen['ejemplares_disponibles'] }} <span class="text-xs font-normal text-slate-400">/ {{ $resumen['total_ejemplares'] }}</span></p>
@@ -59,65 +44,6 @@
         <p class="text-xs text-amber-300 font-semibold mt-1">📖 {{ $resumen['reclamos_abiertos'] }} reclamos abiertos</p>
     </div>
 </div>
-
-<!-- Cola Prioritaria: Pagos Yape/Plin y Mostrador por Validar -->
-@if($pagosPendientesLoans->isNotEmpty() || $pagosPendientesOrders->isNotEmpty())
-<div class="mb-6 bg-amber-950/30 border border-amber-500/40 rounded-2xl p-5 space-y-4">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-            <h2 class="text-sm font-extrabold text-amber-300">⏳ Pagos Pendientes de Verificación (Expiración automática 24h)</h2>
-            <p class="text-xs text-slate-300">Valida el abono Yape/Plin o cobro en mostrador antes de entregar los ejemplares.</p>
-        </div>
-        <a href="{{ route('loans.index', ['estado_pago' => 'pendiente']) }}" class="text-xs font-bold text-amber-300 hover:underline">Ver todos los pendientes →</a>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        @foreach($pagosPendientesOrders as $ord)
-            <div class="bg-slate-950 rounded-xl border border-slate-800 p-3.5 flex items-center justify-between gap-3">
-                <div class="min-w-0">
-                    <p class="text-xs font-black text-sky-300">{{ $ord->codigo_orden }} · S/ {{ number_format((float) $ord->total, 2) }}</p>
-                    <p class="text-xs font-bold text-white truncate">{{ $ord->user->name }} · {{ $ord->etiquetaMetodoPago() }}</p>
-                    <p class="text-[11px] text-slate-400">Op: {{ $ord->codigo_operacion ?: 'Sin código registrado' }}</p>
-                </div>
-                <div class="flex items-center gap-1.5 flex-shrink-0">
-                    <form action="{{ route('orders.confirmPayment', $ord) }}" method="POST">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[11px] font-black px-2.5 py-1.5 rounded-lg">✓ Confirmar</button>
-                    </form>
-                    <form action="{{ route('orders.cancel', $ord) }}" method="POST" data-confirm="¿Anular orden {{ $ord->codigo_orden }} y liberar stock?">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="bg-rose-950 hover:bg-rose-800 text-rose-200 border border-rose-500/40 text-[11px] font-bold px-2 py-1.5 rounded-lg">✕</button>
-                    </form>
-                </div>
-            </div>
-        @endforeach
-
-        @foreach($pagosPendientesLoans as $pLoan)
-            <div class="bg-slate-950 rounded-xl border border-slate-800 p-3.5 flex items-center justify-between gap-3">
-                <div class="min-w-0">
-                    <p class="text-xs font-black text-amber-300">{{ $pLoan->codigoTicket() }} · S/ {{ number_format((float) $pLoan->monto, 2) }}</p>
-                    <p class="text-xs font-bold text-white truncate">{{ $pLoan->reader->nombre_completo }} — {{ $pLoan->book->titulo }}</p>
-                    <p class="text-[11px] text-slate-400">{{ $pLoan->etiquetaMetodoPago() }} · Op: {{ $pLoan->codigo_operacion ?: 'N/A' }}</p>
-                </div>
-                <div class="flex items-center gap-1.5 flex-shrink-0">
-                    <form action="{{ route('loans.confirmar-pago', $pLoan) }}" method="POST">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[11px] font-black px-2.5 py-1.5 rounded-lg">✓ Confirmar</button>
-                    </form>
-                    <form action="{{ route('loans.anular', $pLoan) }}" method="POST" data-confirm="¿Anular reserva {{ $pLoan->codigoTicket() }} y devolver el ejemplar al stock?">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="bg-rose-950 hover:bg-rose-800 text-rose-200 border border-rose-500/40 text-[11px] font-bold px-2 py-1.5 rounded-lg">✕</button>
-                    </form>
-                </div>
-            </div>
-        @endforeach
-    </div>
-</div>
-@endif
 
 <!-- Alerta de Títulos Agotados: Reposición rápida de inventario -->
 @if($librosSinStock->isNotEmpty())
@@ -165,7 +91,7 @@
     <!-- Últimos Préstamos con Acción Rápida 1-Clic -->
     <div class="lg:col-span-2 bg-slate-900 rounded-2xl border border-slate-800 shadow-lg p-5">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-base font-extrabold text-white">📋 Últimos Movimientos y Caja</h2>
+            <h2 class="text-base font-extrabold text-white">📋 Últimos Préstamos</h2>
             <a href="{{ route('loans.index') }}" class="text-xs font-bold text-amber-400 hover:underline">Ver historial completo →</a>
         </div>
 
@@ -192,7 +118,6 @@
                                 <p class="text-[11px] text-slate-400">Límite: {{ $loan->fecha_devolucion_esperada->format('d/m/Y') }}</p>
                             </td>
                             <td class="py-3 px-2 text-xs">
-                                <p class="font-bold text-white">S/ {{ number_format((float) $loan->monto, 2) }}</p>
                                 <span class="text-[10px] font-bold {{ $loan->estado_pago === 'pagado' ? 'text-emerald-300' : ($loan->estado_pago === 'anulado' ? 'text-slate-400' : 'text-amber-300') }}">
                                     {{ $loan->etiquetaEstadoPago() }}
                                 </span>
@@ -203,13 +128,6 @@
                             <td class="py-3 px-2 text-right">
                                 <div class="inline-flex items-center gap-1.5">
                                     <a href="{{ route('loans.ticket', $loan) }}" class="text-xs font-bold text-amber-300 hover:underline">🎫</a>
-                                    @if($loan->pagoPendiente())
-                                        <form action="{{ route('loans.confirmar-pago', $loan) }}" method="POST" class="inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="bg-amber-400 hover:bg-amber-300 text-slate-950 text-[11px] font-black px-2 py-1 rounded-lg">Cobrar</button>
-                                        </form>
-                                    @endif
                                     @if($loan->estado !== 'devuelto' && ! $loan->estaAnulado())
                                         <form action="{{ route('loans.devolver', $loan) }}" method="POST" class="inline">
                                             @csrf

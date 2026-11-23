@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 5500);
     });
 
-    // 2. Delegación global de formularios (Confirmación + Favoritos AJAX + Carrito AJAX + Loading)
+    // 2. Delegación global de formularios (Confirmación + Favoritos AJAX + Loading)
     document.addEventListener('submit', async (e) => {
         const form = e.target;
         if (!(form instanceof HTMLFormElement)) return;
@@ -34,32 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         btn.title = data.favorito ? 'Quitar de Mi Estantería' : 'Guardar en Mi Estantería';
                     }
                     mostrarToast(data.message || 'Estantería actualizada.');
-                }
-            } catch {
-                form.submit();
-            }
-            return;
-        }
-
-        // Agregar al carrito vía AJAX sin perder posición en catálogo
-        if (form.classList.contains('js-cart-add-form')) {
-            e.preventDefault();
-            try {
-                const res = await fetch(form.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: new FormData(form),
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    actualizarBadgeCarrito(data.cart_count ?? 0);
-                    mostrarToast(data.message || 'Obra añadida al carrito.');
-                } else {
-                    mostrarToast(data.message || 'No se pudo agregar al carrito.');
                 }
             } catch {
                 form.submit();
@@ -221,22 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-function actualizarBadgeCarrito(count) {
-    const navBadge = document.getElementById('nav-cart-badge');
-    const mobileBadge = document.getElementById('mobile-cart-badge');
-
-    if (navBadge) {
-        navBadge.textContent = String(count);
-        navBadge.className = count > 0
-            ? 'px-1.5 py-0.5 text-[10px] font-black rounded-full bg-amber-400 text-slate-950'
-            : 'px-1.5 py-0.5 text-[10px] font-black rounded-full bg-slate-800 text-slate-300';
-    }
-    if (mobileBadge) {
-        mobileBadge.textContent = String(count);
-        mobileBadge.classList.toggle('hidden', count <= 0);
-    }
-}
-
 async function cargarCatalogoAjax(url, scrollTop) {
     const container = document.getElementById('books-grid-container');
     if (!container) return;
@@ -300,14 +258,6 @@ function abrirQuickView(book) {
     stockEl.className = book.disponible
         ? 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
         : 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-200 border border-rose-500/40';
-
-    const buyForm = document.getElementById('qv-buy-form');
-    const buyBtn = document.getElementById('qv-buy-btn');
-    if (buyForm && buyBtn) {
-        buyForm.action = book.cart_url || '#';
-        buyForm.classList.toggle('hidden', !book.disponible);
-        buyBtn.textContent = '🛒 Comprar';
-    }
 
     const reserveLink = document.getElementById('qv-reserve-link');
     reserveLink.href = book.disponible ? (book.reserve_url || '#') : (book.show_url || '#');
