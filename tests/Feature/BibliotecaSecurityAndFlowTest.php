@@ -3,13 +3,17 @@
 namespace Tests\Feature;
 
 use App\Models\Book;
-use App\Models\Category;
+use App\Models\Complaint;
 use App\Models\Loan;
+use App\Models\Order;
 use App\Models\Reader;
+use App\Models\Review;
 use App\Models\User;
 use App\Models\Waitlist;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class BibliotecaSecurityAndFlowTest extends TestCase
@@ -28,7 +32,44 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $this->get('/books')->assertStatus(200);
 
         $book = Book::first();
-        $this->get("/books/{$book->id}")->assertStatus(200)->assertSee($book->titulo);
+        $this->get("/books/{$book->id}")
+            ->assertStatus(200)
+            ->assertSee($book->titulo)
+            ->assertSee('Open Library')
+            ->assertSee('Internet Archive')
+            ->assertSee('Project Gutenberg')
+            ->assertSee('loading="lazy"', false);
+    }
+
+    public function test_retired_cart_and_order_listing_redirect_to_catalog(): void
+    {
+        $cliente = User::where('email', 'cliente@novaether.com')->firstOrFail();
+
+        $this->actingAs($cliente)
+            ->get(route('cart.index'))
+            ->assertRedirect(route('books.index'));
+
+        $this->actingAs($cliente)
+            ->get(route('orders.index'))
+            ->assertRedirect(route('books.index'));
+    }
+
+    public function test_admin_book_forms_hide_commerce_prices(): void
+    {
+        $admin = User::where('email', 'admin@novaether.com')->firstOrFail();
+        $book = Book::firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('books.create'))
+            ->assertOk()
+            ->assertDontSee('precio_alquiler')
+            ->assertDontSee('precio_venta');
+
+        $this->actingAs($admin)
+            ->get(route('books.edit', $book))
+            ->assertOk()
+            ->assertDontSee('precio_alquiler')
+            ->assertDontSee('precio_venta');
     }
 
     public function test_register_creates_linked_user_and_reader_and_logs_in(): void
@@ -104,8 +145,9 @@ class BibliotecaSecurityAndFlowTest extends TestCase
 
         // Aunque busque por el DNI de otro lector o título ajeno, su préstamo no debe aparecer
         $this->actingAs($cliente)
-            ->get('/loans?buscar=' . urlencode($otroLoan->reader->dni_codigo))
+            ->get('/loans?buscar='.urlencode($otroLoan->reader->dni_codigo))
             ->assertStatus(200)
+            ->assertDontSee('S/ ')
             ->assertDontSee($otroLoan->reader->nombre_completo)
             ->assertDontSee($otroLoan->book->titulo);
 
@@ -193,6 +235,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             ->get("/loans/{$ownLoan->id}/ticket")
             ->assertStatus(200)
             ->assertSee($ownLoan->codigoTicket())
+            ->assertDontSee('S/ ')
             ->assertSee('data:image/svg+xml;base64,');
     }
 
@@ -352,7 +395,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             'name' => $suspendidoReader->nombre_completo,
             'email' => $suspendidoReader->email,
             'rol' => 'cliente',
-            'password' => \Illuminate\Support\Facades\Hash::make('secret123'),
+            'password' => Hash::make('secret123'),
         ]);
         $suspendidoReader->update(['user_id' => $user->id]);
 
@@ -370,7 +413,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_login_hides_demo_credentials_and_dashboard_shows_real_restock_and_financials(): void
+    public function test_login_hides_demo_credentials_and_dashboard_shows_restock_without_financials(): void
     {
         $this->get('/login')
             ->assertStatus(200)
@@ -383,7 +426,9 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             ->get('/dashboard')
             ->assertStatus(200)
             ->assertDontSee('Probar bloqueo:')
-            ->assertSee('Ingresos Verificados')
+            ->assertDontSee('Ingresos Verificados')
+            ->assertDontSee('Pagos Pendientes de Verificación')
+            ->assertDontSee('Cobrar')
             ->assertSee('Reponer «');
     }
 
@@ -529,7 +574,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             'usar_karma' => '1',
         ]);
 
-        $order = \App\Models\Order::latest('id')->firstOrFail();
+        $order = Order::latest('id')->firstOrFail();
         $response->assertRedirect(route('orders.show', $order));
 
         $this->assertSame('pagado', $order->estado_pago);
@@ -545,13 +590,15 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $loanItem = $order->items()->where('tipo_operacion', 'alquiler')->firstOrFail();
         $this->assertNotNull($loanItem->loan_id);
 
-        $this->actingAs($cliente)->get(route('orders.show', $order))->assertStatus(200)->assertSee($order->codigo_orden);
+        $this->actingAs($cliente)
+            ->get(route('orders.show', $order))
+            ->assertRedirect(route('books.index'));
     }
 
     public function test_admin_post_sale_consoles_complaints_waitlists_and_review_moderation(): void
     {
         $admin = User::where('email', 'admin@novaether.com')->firstOrFail();
-        $complaint = \App\Models\Complaint::firstOrFail();
+        $complaint = Complaint::firstOrFail();
 
         $this->actingAs($admin)->get('/admin/reclamaciones')->assertStatus(200)->assertSee($complaint->codigo_reclamo);
         $this->actingAs($admin)->patch("/admin/reclamaciones/{$complaint->id}", [
@@ -562,13 +609,13 @@ class BibliotecaSecurityAndFlowTest extends TestCase
 
         $this->actingAs($admin)->get('/admin/listas-espera')->assertStatus(200)->assertSee('La ciudad y los perros');
 
-        $review = \App\Models\Review::firstOrFail();
+        $review = Review::firstOrFail();
         $this->actingAs($admin)->get('/admin/resenas')->assertStatus(200);
         $this->actingAs($admin)->patch("/reviews/{$review->id}/visibilidad")->assertRedirect();
         $this->assertFalse($review->fresh()->visible);
 
         // Ni otro cliente ni un visitante público ven reseñas ocultas por moderación
-        \Illuminate\Support\Facades\Auth::logout();
+        Auth::logout();
         $this->get("/books/{$review->book_id}")->assertStatus(200)->assertDontSee($review->comentario);
     }
 
@@ -585,13 +632,13 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $loginRes->assertStatus(200)->assertJsonStructure(['token', 'token_type', 'user']);
         $token = $loginRes->json('token');
 
-        $this->withHeader('Authorization', 'Bearer ' . $token)
+        $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/v1/me')
             ->assertStatus(200)
             ->assertJsonPath('user.email', 'cliente@novaether.com');
 
         $book = Book::where('stock_disponible', '>', 0)->firstOrFail();
-        $this->withHeader('Authorization', 'Bearer ' . $token)
+        $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/orders', [
                 'items' => [
                     ['book_id' => $book->id, 'tipo_operacion' => 'venta', 'cantidad' => 1],

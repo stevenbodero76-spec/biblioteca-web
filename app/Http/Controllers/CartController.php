@@ -9,33 +9,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Illuminate\View\View;
 
 class CartController extends Controller
 {
     public function __construct(private readonly CartService $cart) {}
 
-    public function index(Request $request): View
+    public function index(): RedirectResponse
     {
-        $items = $this->cart->items();
-        $subtotal = $this->cart->subtotal();
-        $soloAlquileres = $this->cart->soloAlquileres();
-        $reader = $request->user()?->reader;
-
-        $maxDescuentoKarma = 0.0;
-        if ($reader && $reader->puntos_karma >= 10 && $subtotal > 0) {
-            $maxSoles = floor($subtotal * 0.50);
-            $solesKarma = intdiv((int) $reader->puntos_karma, 10);
-            $maxDescuentoKarma = (float) min($maxSoles, $solesKarma);
-        }
-
-        return view('cart.index', compact(
-            'items',
-            'subtotal',
-            'soloAlquileres',
-            'reader',
-            'maxDescuentoKarma'
-        ));
+        return redirect()->route('books.index');
     }
 
     public function add(Request $request, Book $book): RedirectResponse|JsonResponse

@@ -3,67 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use chillerlan\QRCode\Common\EccLevel;
-use chillerlan\QRCode\Output\QRMarkupSVG;
-use chillerlan\QRCode\QRCode;
-use chillerlan\QRCode\QROptions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\View\View;
 
 class OrderController extends Controller
 {
-    public function index(Request $request): View
+    public function index(): RedirectResponse
     {
         Gate::authorize('viewAny', Order::class);
 
-        $user = $request->user();
-        $filtros = $request->only(['buscar', 'estado_pago', 'estado_pedido']);
-
-        $orders = Order::with(['items.book', 'reader', 'user'])
-            ->visiblePara($user)
-            ->when(trim((string) ($filtros['buscar'] ?? '')), function ($q, $buscar) {
-                $q->where(function ($sub) use ($buscar) {
-                    $sub->where('codigo_orden', 'like', "%{$buscar}%")
-                        ->orWhere('codigo_operacion', 'like', "%{$buscar}%")
-                        ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%{$buscar}%")->orWhere('email', 'like', "%{$buscar}%"));
-                });
-            })
-            ->when($filtros['estado_pago'] ?? null, fn ($q, $p) => $q->where('estado_pago', $p))
-            ->when($filtros['estado_pedido'] ?? null, fn ($q, $e) => $q->where('estado_pedido', $e))
-            ->latest()
-            ->paginate(12)
-            ->withQueryString();
-
-        return view('orders.index', compact('orders', 'filtros'));
+        return redirect()->route('books.index');
     }
 
-    public function show(Order $order): View
+    public function show(Order $order): RedirectResponse
     {
         Gate::authorize('view', $order);
 
-        $order->load(['items.book', 'items.loan', 'reader', 'user']);
-
-        $options = new QROptions([
-            'outputInterface' => QRMarkupSVG::class,
-            'outputBase64' => true,
-            'eccLevel' => EccLevel::M,
-            'addQuietzone' => true,
-        ]);
-
-        $payload = json_encode([
-            'orden' => $order->codigo_orden,
-            'cliente' => $order->user->name,
-            'total' => (string) $order->total,
-            'pago' => $order->etiquetaEstadoPago(),
-            'pedido' => $order->etiquetaEstadoPedido(),
-        ], JSON_UNESCAPED_UNICODE);
-
-        $qrDataUri = (new QRCode($options))->render($payload);
-
-        return view('orders.show', compact('order', 'qrDataUri'));
+        return redirect()->route('books.index');
     }
 
     public function confirmPayment(Request $request, Order $order): RedirectResponse

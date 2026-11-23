@@ -114,6 +114,25 @@ class BookController extends Controller
                 ->value('fecha_devolucion_esperada')
             : null;
 
+        $terminoBusqueda = rawurlencode(trim($book->titulo.' '.$book->autor));
+        $tituloBusqueda = rawurlencode($book->titulo);
+        $enlacesLectura = [
+            'fuentes' => [
+                [
+                    'nombre' => 'Open Library',
+                    'url' => "https://openlibrary.org/search?q={$terminoBusqueda}",
+                ],
+                [
+                    'nombre' => 'Internet Archive',
+                    'url' => "https://archive.org/search?query={$terminoBusqueda}",
+                ],
+                [
+                    'nombre' => 'Project Gutenberg',
+                    'url' => "https://www.gutenberg.org/ebooks/search/?query={$tituloBusqueda}",
+                ],
+            ],
+        ];
+
         $miWaitlist = null;
         $miPosicionCola = null;
         $esFavorito = false;
@@ -144,6 +163,7 @@ class BookController extends Controller
             'relacionados',
             'waitlistCount',
             'proximaDevolucion',
+            'enlacesLectura',
             'miWaitlist',
             'miPosicionCola',
             'esFavorito',
@@ -275,14 +295,14 @@ class BookController extends Controller
 
         if ($request->hasFile('portada_file')) {
             $path = $request->file('portada_file')->store('covers', 'public');
-            $datos['portada_url'] = '/storage/' . ltrim($path, '/');
+            $datos['portada_url'] = '/storage/'.ltrim($path, '/');
         } elseif ($book && empty($datos['portada_url'])) {
             $datos['portada_url'] = $book->portada_url;
         }
 
         if ($request->hasFile('pdf_file')) {
             $path = $request->file('pdf_file')->store('pdfs', 'public');
-            $datos['archivo_pdf'] = '/storage/' . ltrim($path, '/');
+            $datos['archivo_pdf'] = '/storage/'.ltrim($path, '/');
         } elseif ($book && empty($datos['archivo_pdf'])) {
             $datos['archivo_pdf'] = $book->archivo_pdf;
         }
