@@ -44,36 +44,49 @@ class BookController extends Controller
             ]);
         }
 
-        $categories = Cache::remember('catalog_categories_with_count', 300, fn () => Category::withCount('books')->orderBy('id')->get());
+        $categoriesRaw = Cache::remember(
+            'catalog_categories_with_count_v2',
+            300,
+            fn () => Category::withCount('books')->orderBy('id')->get()->toArray()
+        );
+        $categories = is_array($categoriesRaw)
+            ? Category::hydrate($categoriesRaw)
+            : Category::withCount('books')->orderBy('id')->get();
 
         $stats = Cache::remember('catalog_home_stats', 300, fn () => [
-            'total_titulos' => Book::count(),
-            'total_ejemplares' => Book::sum('stock_total'),
-            'disponibles_ahora' => Book::sum('stock_disponible'),
-            'categorias_activas' => Category::count(),
+            'total_titulos' => (int) Book::count(),
+            'total_ejemplares' => (int) Book::sum('stock_total'),
+            'disponibles_ahora' => (int) Book::sum('stock_disponible'),
+            'categorias_activas' => (int) Category::count(),
         ]);
 
-        $showcaseTabs = Cache::remember('catalog_showcase_tabs', 300, fn () => [
-            'valorados' => Book::with('category')
-                ->withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
+        $showcaseTabsRaw = Cache::remember('catalog_showcase_tabs_v2', 300, fn () => [
+            'valorados' => Book::withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
                 ->withCount(['reviews' => fn ($q) => $q->where('visible', true)])
                 ->orderByDesc('reviews_avg_rating')
                 ->orderByDesc('reviews_count')
                 ->take(5)
-                ->get(),
-            'manga' => Book::with('category')
-                ->withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
+                ->get()
+                ->toArray(),
+            'manga' => Book::withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
                 ->withCount(['reviews' => fn ($q) => $q->where('visible', true)])
                 ->whereHas('category', fn ($q) => $q->where('nombre', 'like', '%Cómics%'))
                 ->take(5)
-                ->get(),
-            'tech' => Book::with('category')
-                ->withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
+                ->get()
+                ->toArray(),
+            'tech' => Book::withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
                 ->withCount(['reviews' => fn ($q) => $q->where('visible', true)])
                 ->whereHas('category', fn ($q) => $q->where('nombre', 'like', '%Tecnología%')->orWhere('nombre', 'like', '%Negocios%')->orWhere('nombre', 'like', '%Desarrollo%'))
                 ->take(5)
-                ->get(),
+                ->get()
+                ->toArray(),
         ]);
+
+        $showcaseTabs = [
+            'valorados' => Book::hydrate($showcaseTabsRaw['valorados'] ?? []),
+            'manga' => Book::hydrate($showcaseTabsRaw['manga'] ?? []),
+            'tech' => Book::hydrate($showcaseTabsRaw['tech'] ?? []),
+        ];
 
         return view('books.index', compact(
             'books',
@@ -354,10 +367,10 @@ class BookController extends Controller
 
     private function limpiarCacheCatalogo(): void
     {
-        Cache::forget('catalog_categories_with_count');
+        Cache::forget('catalog_categories_with_count_v2');
         Cache::forget('catalog_home_stats');
-        Cache::forget('catalog_showcase_tabs');
-        Cache::forget('nav_categories');
+        Cache::forget('catalog_showcase_tabs_v2');
+        Cache::forget('nav_categories_v2');
     }
 
     private function eliminarArchivoPublicoSiLocal(?string $ruta): void

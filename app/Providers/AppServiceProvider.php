@@ -34,7 +34,14 @@ class AppServiceProvider extends ServiceProvider
                     ->get();
             }
 
-            $navCategories = Cache::remember('nav_categories', 300, fn () => Category::orderBy('id')->get());
+            $navCategoriesRaw = Cache::remember(
+                'nav_categories_v2',
+                300,
+                fn () => Category::orderBy('id')->get(['id', 'nombre', 'icono'])->toArray()
+            );
+            $navCategories = is_array($navCategoriesRaw)
+                ? Category::hydrate($navCategoriesRaw)
+                : Category::orderBy('id')->get();
 
             $view->with(compact('notificacionesEspera', 'navCategories'));
         });
