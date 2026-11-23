@@ -17,14 +17,14 @@ ALTER TABLE `books`
 -- (Creado en 2026_11_16_000001_upgrade_biblioteca_integrity_and_indexes.php y usado por whereFullText)
 -- CREATE FULLTEXT INDEX `idx_books_fulltext_search` ON `books` (`titulo`, `autor`);
 
--- 4. Completar enlaces reales de lectura abierta en obras que tenían archivo_pdf = NULL
+-- 4. Completar enlaces reales de visor embebido archive.org/embed/ en obras del catálogo
 UPDATE `books`
-SET `archivo_pdf` = 'https://openlibrary.org/isbn/9788420412146',
+SET `archivo_pdf` = 'https://archive.org/embed/laciudadylosperr0000varg',
     `formato` = 'ambos'
 WHERE `isbn` = '978-8420412146'; -- La ciudad y los perros
 
 UPDATE `books`
-SET `archivo_pdf` = 'https://openlibrary.org/isbn/9780714832470',
+SET `archivo_pdf` = 'https://archive.org/embed/the-story-of-art-by-e.-h.-gombrich',
     `formato` = 'ambos'
 WHERE `isbn` = '978-0714832470'; -- La Historia del Arte
 

@@ -41,20 +41,6 @@ class CreateLoanAction
                 ]);
             }
 
-            $metodoSolicitado = $datos['metodo_pago'] ?? 'gratuito';
-
-            $esGratuitoOMembresia = in_array($metodoSolicitado, ['gratuito', 'membresia'], true);
-            $metodoPago = $esGratuitoOMembresia ? 'membresia' : $metodoSolicitado;
-            $monto = $esGratuitoOMembresia ? 0.00 : (float) $book->precio_alquiler;
-            $codigoOperacion = trim((string) ($datos['codigo_operacion'] ?? '')) ?: null;
-
-            $pagoInmediato = $esGratuitoOMembresia
-                || ($actor->esAdmin() && ! empty($datos['pago_verificado_admin']));
-
-            $estadoPago = $pagoInmediato ? 'pagado' : 'pendiente';
-            $fechaPago = $pagoInmediato ? now() : null;
-            $expiraPago = $pagoInmediato ? null : now()->addHours(24);
-
             $loan = Loan::create([
                 'book_id' => $book->id,
                 'reader_id' => $reader->id,
@@ -62,13 +48,13 @@ class CreateLoanAction
                 'fecha_prestamo' => $datos['fecha_prestamo'],
                 'fecha_devolucion_esperada' => $datos['fecha_devolucion_esperada'],
                 'estado' => 'prestado',
-                'metodo_pago' => $metodoPago,
-                'monto' => $monto,
-                'estado_pago' => $estadoPago,
-                'codigo_operacion' => $codigoOperacion,
-                'fecha_pago' => $fechaPago,
-                'expira_pago_at' => $expiraPago,
-                'observaciones' => $datos['observaciones'] ?? null,
+                'metodo_pago' => 'membresia',
+                'monto' => 0.00,
+                'estado_pago' => 'pagado',
+                'codigo_operacion' => trim((string) ($datos['codigo_operacion'] ?? '')) ?: null,
+                'fecha_pago' => now(),
+                'expira_pago_at' => null,
+                'observaciones' => $datos['observaciones'] ?? 'Préstamo público gratuito.',
             ]);
 
             $book->decrement('stock_disponible');

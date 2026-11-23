@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update');
         Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy');
         Route::get('/api/isbn/{isbn}', [BookController::class, 'buscarPorIsbn'])->name('books.isbn');
+        Route::post('/books/importar-externo', [BookController::class, 'importarExterno'])->name('books.importar-externo');
 
         Route::resource('readers', ReaderController::class)->except(['show']);
 

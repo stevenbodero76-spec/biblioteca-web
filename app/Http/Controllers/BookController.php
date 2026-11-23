@@ -19,7 +19,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BookController extends Controller
 {
-    public function index(Request $request): View|JsonResponse
+    public function index(Request $request, BookLinkInterconnectorService $interconnector): View|JsonResponse
     {
         $filtros = $request->only(['buscar', 'category_id', 'formato', 'disponibilidad', 'orden']);
 
@@ -35,45 +35,65 @@ class BookController extends Controller
             ? Auth::user()->favorites()->pluck('book_id')->all()
             : [];
 
+        $librosExternos = [];
+        $terminoBusqueda = trim((string) ($filtros['buscar'] ?? ''));
+        if ($terminoBusqueda !== '' && $books->total() === 0) {
+            $librosExternos = $interconnector->buscarEnRedesExternas($terminoBusqueda, 6);
+        }
+
         if ($request->ajax() || $request->boolean('partial')) {
-            $html = view('books.partials.grid', compact('books', 'favoriteBookIds', 'filtros'))->render();
+            $html = view('books.partials.grid', compact('books', 'favoriteBookIds', 'filtros', 'librosExternos'))->render();
 
             return response()->json([
                 'html' => $html,
                 'total' => $books->total(),
+                'total_externos' => count($librosExternos),
             ]);
         }
 
-        $categories = Cache::remember('catalog_categories_with_count', 300, fn () => Category::withCount('books')->orderBy('id')->get());
+        $categoriesRaw = Cache::remember(
+            'catalog_categories_with_count_v2',
+            300,
+            fn () => Category::withCount('books')->orderBy('id')->get()->toArray()
+        );
+        $categories = is_array($categoriesRaw)
+            ? Category::hydrate($categoriesRaw)
+            : Category::withCount('books')->orderBy('id')->get();
 
         $stats = Cache::remember('catalog_home_stats', 300, fn () => [
-            'total_titulos' => Book::count(),
-            'total_ejemplares' => Book::sum('stock_total'),
-            'disponibles_ahora' => Book::sum('stock_disponible'),
-            'categorias_activas' => Category::count(),
+            'total_titulos' => (int) Book::count(),
+            'total_ejemplares' => (int) Book::sum('stock_total'),
+            'disponibles_ahora' => (int) Book::sum('stock_disponible'),
+            'categorias_activas' => (int) Category::count(),
         ]);
 
-        $showcaseTabs = Cache::remember('catalog_showcase_tabs', 300, fn () => [
-            'valorados' => Book::with('category')
-                ->withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
+        $showcaseTabsRaw = Cache::remember('catalog_showcase_tabs_v2', 300, fn () => [
+            'valorados' => Book::withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
                 ->withCount(['reviews' => fn ($q) => $q->where('visible', true)])
                 ->orderByDesc('reviews_avg_rating')
                 ->orderByDesc('reviews_count')
                 ->take(5)
-                ->get(),
-            'manga' => Book::with('category')
-                ->withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
+                ->get()
+                ->toArray(),
+            'manga' => Book::withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
                 ->withCount(['reviews' => fn ($q) => $q->where('visible', true)])
                 ->whereHas('category', fn ($q) => $q->where('nombre', 'like', '%Cómics%'))
                 ->take(5)
-                ->get(),
-            'tech' => Book::with('category')
-                ->withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
+                ->get()
+                ->toArray(),
+            'tech' => Book::withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
                 ->withCount(['reviews' => fn ($q) => $q->where('visible', true)])
                 ->whereHas('category', fn ($q) => $q->where('nombre', 'like', '%Tecnología%')->orWhere('nombre', 'like', '%Negocios%')->orWhere('nombre', 'like', '%Desarrollo%'))
                 ->take(5)
-                ->get(),
+                ->get()
+                ->toArray(),
         ]);
+
+        $showcaseTabs = [
+            'valorados' => Book::hydrate($showcaseTabsRaw['valorados'] ?? []),
+            'manga' => Book::hydrate($showcaseTabsRaw['manga'] ?? []),
+            'tech' => Book::hydrate($showcaseTabsRaw['tech'] ?? []),
+        ];
 
         return view('books.index', compact(
             'books',
@@ -81,7 +101,8 @@ class BookController extends Controller
             'filtros',
             'stats',
             'showcaseTabs',
-            'favoriteBookIds'
+            'favoriteBookIds',
+            'librosExternos'
         ));
     }
 
@@ -186,8 +207,6 @@ class BookController extends Controller
     public function store(BookRequest $request, BookLinkInterconnectorService $interconnector): RedirectResponse
     {
         $datos = $this->prepararDatosLibro($request, null, $interconnector);
-        $datos['precio_alquiler'] = $datos['precio_alquiler'] ?? 0.00;
-        $datos['precio_venta'] = $datos['precio_venta'] ?? 0.00;
 
         Book::create($datos);
         $this->limpiarCacheCatalogo();
@@ -208,8 +227,6 @@ class BookController extends Controller
     public function update(BookRequest $request, Book $book, BookLinkInterconnectorService $interconnector): RedirectResponse
     {
         $datos = $this->prepararDatosLibro($request, $book, $interconnector);
-        $datos['precio_alquiler'] = $datos['precio_alquiler'] ?? $book->precio_alquiler;
-        $datos['precio_venta'] = $datos['precio_venta'] ?? $book->precio_venta;
 
         $book->update($datos);
         $this->limpiarCacheCatalogo();
@@ -221,7 +238,7 @@ class BookController extends Controller
 
     public function destroy(Book $book): RedirectResponse
     {
-        if ($book->loans()->exists() || (method_exists($book, 'orderItems') && $book->orderItems()->exists())) {
+        if ($book->loans()->exists()) {
             return back()->with('error', 'No se puede eliminar esta obra porque tiene historial de préstamos asociados.');
         }
 
@@ -236,6 +253,62 @@ class BookController extends Controller
         return redirect()
             ->route('books.index')
             ->with('success', 'Obra eliminada del catálogo.');
+    }
+
+    public function importarExterno(Request $request): RedirectResponse
+    {
+        if (! Auth::check() || ! Auth::user()->esAdmin()) {
+            abort(403, 'Acción restringida a administradores.');
+        }
+
+        $datos = $request->validate([
+            'titulo' => ['required', 'string', 'max:255'],
+            'autor' => ['required', 'string', 'max:255'],
+            'editorial' => ['nullable', 'string', 'max:255'],
+            'anio_publicacion' => ['nullable', 'integer', 'min:1000', 'max:2100'],
+            'isbn' => ['nullable', 'string', 'max:50'],
+            'portada_url' => ['nullable', 'url', 'max:500'],
+            'archivo_pdf' => ['required', 'url', 'max:500'],
+            'category_id' => ['nullable', 'exists:categories,id'],
+        ]);
+
+        $categoriaId = $datos['category_id'] ?? Category::first()?->id;
+        if (! $categoriaId) {
+            $cat = Category::firstOrCreate(
+                ['slug' => 'clasicos-dominio-publico'],
+                ['nombre' => 'Clásicos y Dominio Público', 'icono' => '🏛️']
+            );
+            $categoriaId = $cat->id;
+        }
+
+        $isbn = trim((string) ($datos['isbn'] ?? ''));
+        if ($isbn === '' || Book::where('isbn', $isbn)->exists()) {
+            $isbn = 'EXT-' . strtoupper(Str::random(10));
+        }
+
+        $libro = Book::create([
+            'category_id' => $categoriaId,
+            'isbn' => $isbn,
+            'titulo' => $datos['titulo'],
+            'autor' => $datos['autor'],
+            'editorial' => $datos['editorial'] ?: 'Red Pública Digital (Open Library / Gutenberg)',
+            'anio_publicacion' => $datos['anio_publicacion'] ?? (int) date('Y'),
+            'formato' => 'digital',
+            'idioma' => 'es',
+            'licencia' => 'dominio_publico',
+            'sinopsis' => 'Obra importada desde la red abierta global (Open Library & Gutenberg). Disponible para lectura pública y visor embebido.',
+            'portada_url' => $datos['portada_url'] ?? null,
+            'archivo_pdf' => $datos['archivo_pdf'],
+            'ubicacion_estante' => 'Bóveda Digital Abierta',
+            'stock_total' => 10,
+            'stock_disponible' => 10,
+        ]);
+
+        $this->limpiarCacheCatalogo();
+
+        return redirect()
+            ->route('books.show', $libro)
+            ->with('success', '¡Obra «' . $libro->titulo . '» importada exitosamente al catálogo oficial de NOVAETHER™!');
     }
 
     public function buscarPorIsbn(string $isbn, BookLinkInterconnectorService $interconnector): JsonResponse
@@ -354,10 +427,10 @@ class BookController extends Controller
 
     private function limpiarCacheCatalogo(): void
     {
-        Cache::forget('catalog_categories_with_count');
+        Cache::forget('catalog_categories_with_count_v2');
         Cache::forget('catalog_home_stats');
-        Cache::forget('catalog_showcase_tabs');
-        Cache::forget('nav_categories');
+        Cache::forget('catalog_showcase_tabs_v2');
+        Cache::forget('nav_categories_v2');
     }
 
     private function eliminarArchivoPublicoSiLocal(?string $ruta): void
