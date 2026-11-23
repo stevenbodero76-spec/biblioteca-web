@@ -93,18 +93,6 @@
                        class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
             </div>
 
-            <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Precio Alquiler (S/)</label>
-                <input type="number" step="0.10" name="precio_alquiler" value="{{ old('precio_alquiler', '8.00') }}" min="0"
-                       class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
-            </div>
-
-            <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Precio Venta Directa (S/)</label>
-                <input type="number" step="0.10" name="precio_venta" value="{{ old('precio_venta', '49.90') }}" min="0"
-                       class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
-            </div>
-
             <!-- Carga local de portada + URL respaldo -->
             <div>
                 <label class="block text-xs font-extrabold uppercase text-amber-300 mb-1.5">Subir Portada (JPG/PNG/WEBP)</label>

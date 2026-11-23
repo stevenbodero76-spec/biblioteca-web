@@ -21,7 +21,7 @@
             : '✨ Estreno sin reseñas aún',
         'show_url' => route('books.show', $book),
         'reserve_url' => route('loans.create', ['book_id' => $book->id]),
-        'cart_url' => route('cart.add', $book),
+
     ];
 @endphp
 
@@ -100,7 +100,7 @@
         @endif
     </div>
 
-    <!-- Barra inferior: Quick View + Comprar Carrito + Alquilar/Espera -->
+    <!-- Barra inferior: Vista rápida y préstamo / lista de espera -->
     <div class="bg-slate-950/90 px-4 py-3.5 border-t border-slate-800 flex items-center justify-between gap-1.5">
         <button type="button"
                 data-book='@json($quickViewPayload)'
@@ -114,18 +114,6 @@
         </button>
 
         @if($book->estaDisponible())
-            @auth
-                <form action="{{ route('cart.add', $book) }}" method="POST" class="js-cart-add-form">
-                    @csrf
-                    <input type="hidden" name="tipo_operacion" value="venta">
-                    <button type="submit" data-no-loading="true"
-                            class="h-9 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 border border-emerald-500/40 text-xs font-black transition whitespace-nowrap"
-                            title="Añadir compra directa al carrito">
-                        🛒 Comprar
-                    </button>
-                </form>
-            @endauth
-
             <a href="{{ route('loans.create', ['book_id' => $book->id]) }}"
                class="flex-1 h-9 inline-flex items-center justify-center bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-3 rounded-xl transition shadow truncate">
                 Alquilar

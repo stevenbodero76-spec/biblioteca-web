@@ -55,9 +55,8 @@
                         <span class="block text-[11px] text-slate-300">Doc: {{ $loan->reader->dni_codigo }}</span>
                     </div>
                     <div>
-                        <span class="block text-[10px] font-extrabold uppercase text-slate-400">Modalidad / Monto</span>
+                        <span class="block text-[10px] font-extrabold uppercase text-slate-400">Modalidad</span>
                         <span class="text-xs font-bold text-white">{{ $loan->etiquetaMetodoPago() }}</span>
-                        <span class="block text-xs font-black text-amber-300">S/ {{ number_format((float) $loan->monto, 2) }}</span>
                         @if($loan->codigo_operacion)
                             <span class="block text-[10px] font-mono text-slate-300">Op: {{ $loan->codigo_operacion }}</span>
                         @endif
