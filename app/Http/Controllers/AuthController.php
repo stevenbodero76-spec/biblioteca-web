@@ -72,7 +72,7 @@ class AuthController extends Controller
         $datos = $request->validate([
             'nombres' => ['required', 'string', 'max:100'],
             'apellidos' => ['required', 'string', 'max:100'],
-            'dni_codigo' => ['required', 'string', 'max:20', 'unique:readers,dni_codigo'],
+            'dni_codigo' => ['nullable', 'string', 'max:20', 'unique:readers,dni_codigo'],
             'telefono' => ['nullable', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email', 'unique:readers,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
@@ -88,13 +88,12 @@ class AuthController extends Controller
 
             $reader = Reader::create([
                 'user_id' => $nuevoUsuario->id,
-                'dni_codigo' => $datos['dni_codigo'],
+                'dni_codigo' => $datos['dni_codigo'] ?? null,
                 'nombres' => $datos['nombres'],
                 'apellidos' => $datos['apellidos'],
                 'email' => $datos['email'],
                 'telefono' => $datos['telefono'] ?? null,
                 'tipo' => 'publico',
-                'plan_suscripcion' => 'free',
                 'estado' => 'activo',
                 'puntos_karma' => 50,
             ]);

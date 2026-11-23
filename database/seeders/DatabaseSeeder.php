@@ -157,10 +157,10 @@ class DatabaseSeeder extends Seeder
                 'autor' => 'Mario Vargas Llosa',
                 'editorial' => 'Alfaguara',
                 'anio_publicacion' => 1963,
-                'formato' => 'fisico',
+                'formato' => 'ambos',
                 'sinopsis' => 'La novela ganadora del Premio Biblioteca Breve que catapultó el boom latinoamericano con una narrativa feroz e inolvidable.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9788420412146-L.jpg',
-                'archivo_pdf' => null,
+                'archivo_pdf' => 'https://openlibrary.org/isbn/9788420412146',
                 'ubicacion_estante' => 'Salón Dorado A-02',
                 'stock_total' => 1,
                 'stock_disponible' => 0,
@@ -323,10 +323,10 @@ class DatabaseSeeder extends Seeder
                 'autor' => 'E. H. Gombrich',
                 'editorial' => 'Phaidon Press',
                 'anio_publicacion' => 1950,
-                'formato' => 'fisico',
+                'formato' => 'ambos',
                 'sinopsis' => 'El libro de arte y estética visual más célebre del mundo en formato de lujo.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9780714832470-L.jpg',
-                'archivo_pdf' => null,
+                'archivo_pdf' => 'https://openlibrary.org/isbn/9780714832470',
                 'ubicacion_estante' => 'Galería Visual H-02',
                 'stock_total' => 2,
                 'stock_disponible' => 2,
@@ -368,24 +368,21 @@ class DatabaseSeeder extends Seeder
         ];
 
         $librosPorIsbn = [];
-        foreach ($librosData as $idx => $libro) {
-            $esManga = $libro['category_id'] === $categorias['Cómics, Manga y Novela Gráfica']->id;
-            $esTech = $libro['category_id'] === $categorias['Tecnología, IA y Desarrollo (Tech)']->id;
-
-            $libro['precio_alquiler'] = $esManga ? 6.50 : ($esTech ? 12.00 : 8.50 + ($idx % 3));
-            $libro['precio_venta'] = $esManga ? 39.90 : ($esTech ? 115.00 : 54.90 + (($idx % 4) * 5));
+        foreach ($librosData as $libro) {
+            $libro['idioma'] = $libro['isbn'] === '978-1108457651' ? 'en' : 'es';
+            $libro['licencia'] = ($libro['anio_publicacion'] ?? 2000) <= 1955 ? 'dominio_publico' : 'acceso_abierto';
 
             $creado = Book::create($libro);
             $librosPorIsbn[$libro['isbn']] = $creado;
         }
 
-        // 4. Clientes / Miembros Suscriptores de la Plataforma Comercial
+        // 4. Lectores de la Biblioteca Pública Abierta (Estudiante, Docente, Lector Público)
         $lectoresData = [
-            ['user_id' => $cliente->id, 'dni_codigo' => '72849102', 'nombres' => 'Carlos Alberto', 'apellidos' => 'Mendoza Ríos', 'email' => 'cliente@novaether.com', 'telefono' => '987654321', 'tipo' => 'estudiante', 'plan_suscripcion' => 'pro', 'plan_vence_at' => now()->addMonths(2)->toDateString(), 'estado' => 'activo', 'puntos_karma' => 125],
-            ['dni_codigo' => '74102938', 'nombres' => 'Lucía Fernanda', 'apellidos' => 'Quispe Salazar', 'email' => 'lucia.quispe@outlook.com', 'telefono' => '912345678', 'tipo' => 'docente', 'plan_suscripcion' => 'estudiante', 'plan_vence_at' => now()->addMonth()->toDateString(), 'estado' => 'activo', 'puntos_karma' => 210],
-            ['dni_codigo' => '41928374', 'nombres' => 'Roberto', 'apellidos' => 'Paredes Vargas', 'email' => 'rparedes@novaether.club', 'telefono' => '998877665', 'tipo' => 'docente', 'plan_suscripcion' => 'free', 'estado' => 'activo', 'puntos_karma' => 90],
-            ['dni_codigo' => '76543210', 'nombres' => 'Andrea Valeria', 'apellidos' => 'Rojas Castillo', 'email' => 'andrea.rojas@gmail.com', 'telefono' => '955443322', 'tipo' => 'publico', 'plan_suscripcion' => 'pro', 'plan_vence_at' => now()->addMonth()->toDateString(), 'estado' => 'activo', 'puntos_karma' => 75],
-            ['dni_codigo' => '70918273', 'nombres' => 'Diego Alejandro', 'apellidos' => 'Torres Huamán', 'email' => 'diego.torres@hotmail.com', 'telefono' => '944332211', 'tipo' => 'publico', 'plan_suscripcion' => 'free', 'estado' => 'suspendido', 'puntos_karma' => 10],
+            ['user_id' => $cliente->id, 'dni_codigo' => '72849102', 'nombres' => 'Carlos Alberto', 'apellidos' => 'Mendoza Ríos', 'email' => 'cliente@novaether.com', 'telefono' => '987654321', 'tipo' => 'estudiante', 'estado' => 'activo', 'puntos_karma' => 125],
+            ['dni_codigo' => '74102938', 'nombres' => 'Lucía Fernanda', 'apellidos' => 'Quispe Salazar', 'email' => 'lucia.quispe@outlook.com', 'telefono' => '912345678', 'tipo' => 'docente', 'estado' => 'activo', 'puntos_karma' => 210],
+            ['dni_codigo' => '41928374', 'nombres' => 'Roberto', 'apellidos' => 'Paredes Vargas', 'email' => 'rparedes@novaether.club', 'telefono' => '998877665', 'tipo' => 'docente', 'estado' => 'activo', 'puntos_karma' => 90],
+            ['dni_codigo' => '76543210', 'nombres' => 'Andrea Valeria', 'apellidos' => 'Rojas Castillo', 'email' => 'andrea.rojas@gmail.com', 'telefono' => '955443322', 'tipo' => 'publico', 'estado' => 'activo', 'puntos_karma' => 75],
+            ['dni_codigo' => '70918273', 'nombres' => 'Diego Alejandro', 'apellidos' => 'Torres Huamán', 'email' => 'diego.torres@hotmail.com', 'telefono' => '944332211', 'tipo' => 'publico', 'estado' => 'suspendido', 'puntos_karma' => 10],
         ];
 
         $lectores = [];
@@ -393,7 +390,7 @@ class DatabaseSeeder extends Seeder
             $lectores[] = Reader::create($lec);
         }
 
-        // 5. Historial de Préstamos y Reservas Comerciales
+        // 5. Historial de Préstamos Públicos Gratuitos
         Loan::create([
             'book_id' => $librosPorIsbn['978-1569319017']->id, // One Piece Vol. 1
             'reader_id' => $lectores[0]->id,
@@ -402,12 +399,11 @@ class DatabaseSeeder extends Seeder
             'fecha_devolucion_esperada' => now()->addDays(4)->toDateString(),
             'fecha_devolucion_real' => null,
             'estado' => 'prestado',
-            'metodo_pago' => 'yape_plin',
-            'monto' => 6.50,
+            'metodo_pago' => 'membresia',
+            'monto' => 0.00,
             'estado_pago' => 'pagado',
-            'codigo_operacion' => 'YP-492018',
             'fecha_pago' => now()->subDays(3),
-            'observaciones' => 'Entrega de edición coleccionista sellada + acceso a lectura digital HD.',
+            'observaciones' => 'Préstamo público gratuito + acceso a lectura digital.',
         ]);
 
         Loan::create([
@@ -433,11 +429,11 @@ class DatabaseSeeder extends Seeder
             'fecha_devolucion_esperada' => now()->addDays(2)->toDateString(),
             'fecha_devolucion_real' => null,
             'estado' => 'prestado',
-            'metodo_pago' => 'mostrador',
-            'monto' => 6.50,
-            'estado_pago' => 'pendiente',
-            'expira_pago_at' => now()->addHours(18),
-            'observaciones' => 'Reserva exclusiva de tomo manga pendiente de cobro en tienda.',
+            'metodo_pago' => 'membresia',
+            'monto' => 0.00,
+            'estado_pago' => 'pagado',
+            'fecha_pago' => now()->subDays(5),
+            'observaciones' => 'Préstamo público gratuito de tomo manga.',
         ]);
 
         Loan::create([
@@ -452,7 +448,7 @@ class DatabaseSeeder extends Seeder
             'monto' => 0.00,
             'estado_pago' => 'pagado',
             'fecha_pago' => now()->subDays(1),
-            'observaciones' => 'Licencia Cloud activada para cliente.',
+            'observaciones' => 'Préstamo gratuito activado para lector.',
         ]);
 
         Loan::create([
