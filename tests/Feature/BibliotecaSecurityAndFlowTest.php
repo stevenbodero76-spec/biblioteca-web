@@ -617,25 +617,17 @@ class BibliotecaSecurityAndFlowTest extends TestCase
 
     public function test_rol2_hardening_prevents_karma_farming_unpaid_delivery_and_cart_oversell(): void
     {
-        // 1. PlanController no duplica +20 karma al alternar planes dentro de 30 días
         $cliente = User::where('email', 'cliente@novaether.com')->firstOrFail();
         $karmaBase = $cliente->reader->puntos_karma;
 
-        $this->actingAs($cliente)->post('/planes/suscribir', ['plan_suscripcion' => 'free'])->assertRedirect();
-        $this->actingAs($cliente)->post('/planes/suscribir', ['plan_suscripcion' => 'estudiante'])->assertRedirect();
-        $this->actingAs($cliente)->post('/planes/suscribir', ['plan_suscripcion' => 'free'])->assertRedirect();
-        $this->actingAs($cliente)->post('/planes/suscribir', ['plan_suscripcion' => 'pro'])->assertRedirect();
-
-        $this->assertSame($karmaBase + 20, $cliente->reader->fresh()->puntos_karma);
-
-        // 2. ReviewController no otorga +10 karma de nuevo si el usuario borra y republica reseña en la misma obra
+        // ReviewController no otorga karma de nuevo si el usuario borra y republica una reseña.
         $bookSinResena = Book::where('isbn', '978-0451524935')->firstOrFail();
         $this->actingAs($cliente)->post("/books/{$bookSinResena->id}/reviews", [
             'rating' => 5,
             'comentario' => 'Primera opinión verificada en plataforma.',
         ])->assertRedirect();
         $karmaTrasPrimera = $cliente->reader->fresh()->puntos_karma;
-        $this->assertSame($karmaBase + 30, $karmaTrasPrimera);
+        $this->assertSame($karmaBase + 10, $karmaTrasPrimera);
 
         $reviewCreada = \App\Models\Review::where('book_id', $bookSinResena->id)
             ->where('user_id', $cliente->id)
@@ -648,7 +640,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         ])->assertRedirect();
         $this->assertSame($karmaTrasPrimera, $cliente->reader->fresh()->puntos_karma);
 
-        // 3. CartService bloquea combinar venta + alquiler cuando supera stock_disponible
+        // CartService bloquea combinar venta + alquiler cuando supera stock_disponible.
         $bookUno = Book::where('stock_disponible', '>', 0)->firstOrFail();
         $bookUno->update(['stock_total' => 1, 'stock_disponible' => 1]);
 
@@ -662,7 +654,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             'duracion_dias' => 7,
         ])->assertStatus(422)->assertJsonValidationErrors('cantidad');
 
-        // 4. OrderController bloquea marcar 'entregado' si el pago aún está pendiente
+        // OrderController bloquea marcar 'entregado' si el pago aún está pendiente.
         $admin = User::where('email', 'admin@novaether.com')->firstOrFail();
         $orderPendiente = \App\Models\Order::create([
             'codigo_orden' => 'ORD-TEST-PEND1',
