@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\KarmaMovement;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -20,7 +21,9 @@ class PlanController extends Controller
         $datos = $request->validate([
             'plan_suscripcion' => ['required', 'in:free,estudiante,pro'],
             'metodo_pago' => ['nullable', 'in:yape_plin,tarjeta'],
-            'codigo_operacion' => ['nullable', 'string', 'max:60'],
+            'codigo_operacion' => ['nullable', 'required_if:metodo_pago,yape_plin', 'string', 'min:4', 'max:60'],
+        ], [
+            'codigo_operacion.required_if' => 'Ingresa el código de operación Yape/Plin para validar tu suscripción.',
         ]);
 
         $reader = $request->user()->reader;
@@ -29,6 +32,10 @@ class PlanController extends Controller
         }
 
         $plan = $datos['plan_suscripcion'];
+        if ($reader->plan_suscripcion === $plan) {
+            return back()->with('error', "Ya tienes activo el {$reader->etiquetaPlan()}.");
+        }
+
         $tipoLegacy = match ($plan) {
             'pro' => 'docente',
             'estudiante' => 'estudiante',
@@ -41,14 +48,21 @@ class PlanController extends Controller
             'plan_vence_at' => $plan === 'free' ? null : now()->addMonth()->toDateString(),
         ]);
 
-        if ($plan !== 'free') {
-            $reader->registrarKarma(20, "Activación {$reader->etiquetaPlan()}", 'plan', $reader->id);
+        if ($plan === 'free') {
+            return back()->with('success', 'Has cambiado a Lector Free (pago individual por reserva o compra).');
         }
 
-        $mensaje = $plan === 'free'
-            ? 'Has cambiado a Lector Free (pago individual por reserva o compra).'
-            : "🎉 ¡Plan actualizado a {$reader->etiquetaPlan()}! Ya puedes reservar alquileres en S/ 0.00 y ganaste +20 Puntos Nova.";
+        $yaRecibioBonoReciente = KarmaMovement::where('reader_id', $reader->id)
+            ->where('referencia_tipo', 'plan')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->exists();
 
-        return back()->with('success', $mensaje);
+        $bonusTexto = '';
+        if (! $yaRecibioBonoReciente) {
+            $reader->registrarKarma(20, "Activación {$reader->etiquetaPlan()}", 'plan', $reader->id);
+            $bonusTexto = ' y ganaste +20 Puntos Nova';
+        }
+
+        return back()->with('success', "🎉 ¡Plan actualizado a {$reader->etiquetaPlan()}! Ya puedes reservar alquileres en S/ 0.00{$bonusTexto}.");
     }
 }

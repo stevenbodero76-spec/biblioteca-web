@@ -76,6 +76,14 @@ class OrderController extends Controller
             'estado_pedido' => ['required', 'in:pendiente,confirmado,entregado'],
         ]);
 
+        if ($order->estado_pedido === 'cancelado' || $order->estado_pago === 'anulado') {
+            return back()->with('error', "No se puede cambiar el estado de la orden {$order->codigo_orden} porque fue anulada.");
+        }
+
+        if ($datos['estado_pedido'] === 'entregado' && $order->estado_pago !== 'pagado') {
+            return back()->with('error', "Debes confirmar el pago de {$order->codigo_orden} antes de marcarla como entregada.");
+        }
+
         $order->update(['estado_pedido' => $datos['estado_pedido']]);
 
         return back()->with('success', "Estado logístico de {$order->codigo_orden} actualizado.");

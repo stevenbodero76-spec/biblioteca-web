@@ -41,18 +41,20 @@ class CreateLoanAction
                 ]);
             }
 
-            $metodoPago = $datos['metodo_pago'] ?? 'membresia';
+            $metodoSolicitado = $datos['metodo_pago'] ?? 'gratuito';
 
-            if ($metodoPago === 'membresia' && ! $actor->esAdmin() && ! $reader->puedeUsarMembresia()) {
+            if ($metodoSolicitado === 'membresia' && ! $actor->esAdmin() && ! $reader->puedeUsarMembresia()) {
                 throw ValidationException::withMessages([
-                    'metodo_pago' => 'Tu plan actual (Lector Free) no incluye reservas con S/ 0.00. Selecciona Yape / Plin, Mostrador o activa un plan en Club NovaEther.',
+                    'metodo_pago' => 'Tu plan actual (Lector Free) no incluye reservas con S/ 0.00. Selecciona préstamo público gratuito o actualiza tu ficha.',
                 ]);
             }
 
-            $monto = $metodoPago === 'membresia' ? 0.00 : (float) $book->precio_alquiler;
+            $esGratuitoOMembresia = in_array($metodoSolicitado, ['gratuito', 'membresia'], true);
+            $metodoPago = $esGratuitoOMembresia ? 'membresia' : $metodoSolicitado;
+            $monto = $esGratuitoOMembresia ? 0.00 : (float) $book->precio_alquiler;
             $codigoOperacion = trim((string) ($datos['codigo_operacion'] ?? '')) ?: null;
 
-            $pagoInmediato = $metodoPago === 'membresia'
+            $pagoInmediato = $esGratuitoOMembresia
                 || ($actor->esAdmin() && ! empty($datos['pago_verificado_admin']));
 
             $estadoPago = $pagoInmediato ? 'pagado' : 'pendiente';
