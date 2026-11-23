@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Loan extends Model
 {
@@ -53,11 +52,6 @@ class Loan extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function orderItem(): HasOne
-    {
-        return $this->hasOne(OrderItem::class);
-    }
-
     public function estaAnulado(): bool
     {
         return $this->estado_pago === 'anulado';
@@ -80,19 +74,14 @@ class Loan extends Model
 
     public function etiquetaMetodoPago(): string
     {
-        return match ($this->metodo_pago) {
-            'yape_plin' => 'Yape / Plin (Reserva Digital)',
-            'mostrador' => 'Pago en Mostrador al Recoger',
-            default => 'Incluido en Club NovaEther',
-        };
+        return 'Préstamo Público Gratuito';
     }
 
     public function etiquetaEstadoPago(): string
     {
         return match ($this->estado_pago) {
-            'pagado' => 'Pago Verificado',
             'anulado' => 'Anulado / Expirado',
-            default => 'Pendiente de Validación',
+            default => 'Préstamo Gratuito Confirmado',
         };
     }
 

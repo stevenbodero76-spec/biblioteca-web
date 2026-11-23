@@ -20,7 +20,7 @@ class ReaderRequest extends FormRequest
 
         return [
             'dni_codigo' => [
-                'required',
+                'nullable',
                 'string',
                 'max:20',
                 Rule::unique('readers', 'dni_codigo')->ignore($reader?->id),
@@ -36,8 +36,6 @@ class ReaderRequest extends FormRequest
             ],
             'telefono' => ['nullable', 'string', 'max:20'],
             'tipo' => ['required', 'in:estudiante,docente,publico'],
-            'plan_suscripcion' => ['nullable', 'in:free,estudiante,pro'],
-            'plan_vence_at' => ['nullable', 'date'],
             'estado' => ['required', 'in:activo,suspendido'],
             'password' => ['nullable', 'string', 'min:6'],
         ];
