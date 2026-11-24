@@ -65,6 +65,7 @@
                 <select name="licencia" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
                     <option value="">Sin especificar</option>
                     <option value="dominio_publico" @selected(old('licencia') === 'dominio_publico')>Dominio Público</option>
+                    <option value="creative_commons" @selected(old('licencia') === 'creative_commons')>Creative Commons</option>
                     <option value="acceso_abierto" @selected(old('licencia') === 'acceso_abierto')>Acceso Abierto</option>
                 </select>
             </div>

@@ -64,7 +64,7 @@
             <tbody class="divide-y divide-slate-800/80">
                 @forelse($readers as $reader)
                     <tr class="hover:bg-slate-800/40">
-                        <td class="py-3.5 px-4 font-mono font-bold text-amber-300">{{ $reader->dni_codigo }}</td>
+                        <td class="py-3.5 px-4 font-mono font-bold text-amber-300">{{ $reader->dni_codigo ?: 'Sin doc.' }}</td>
                         <td class="py-3.5 px-4">
                             <p class="font-bold text-white">{{ $reader->nombre_completo }}</p>
                             <span class="text-[11px] text-amber-300 font-semibold">{{ $reader->etiquetaSegmento() }}</span>

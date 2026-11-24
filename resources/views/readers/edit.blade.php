@@ -18,8 +18,8 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">DNI / Código de Carnet *</label>
-                <input type="text" name="dni_codigo" value="{{ old('dni_codigo', $reader->dni_codigo) }}" required
+                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">DNI / Código de Carnet (Opcional)</label>
+                <input type="text" name="dni_codigo" value="{{ old('dni_codigo', $reader->dni_codigo) }}" placeholder="Opcional"
                        class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
             </div>
 

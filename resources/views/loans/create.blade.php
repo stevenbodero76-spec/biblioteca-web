@@ -48,7 +48,7 @@
                     @foreach($readers as $reader)
                         <option value="{{ $reader->id }}" @selected(old('reader_id') == $reader->id)>
                             {{ $reader->estado === 'activo' ? '🟢' : '🔴 [SUSPENDIDO]' }}
-                            {{ $reader->nombre_completo }} — Doc: {{ $reader->dni_codigo }} ({{ $reader->etiquetaSegmento() }})
+                            {{ $reader->nombre_completo }}{{ $reader->dni_codigo ? ' — Doc: ' . $reader->dni_codigo : '' }} ({{ $reader->etiquetaSegmento() }})
                         </option>
                     @endforeach
                 </select>

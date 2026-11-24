@@ -7,7 +7,7 @@
     <div class="bg-slate-900/95 rounded-3xl shadow-2xl border border-slate-800 overflow-hidden">
         <div class="bg-slate-950 border-b border-slate-800 px-6 py-7 text-center">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-[11px] font-extrabold uppercase tracking-wider mb-3">
-                ✨ Membresía Digital Instantánea
+                ✨ Acceso Digital Gratuito Instantáneo
             </div>
             <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Crea tu Cuenta en NOVAETHER™</h1>
             <p class="text-xs text-slate-300 mt-1">Regístrate gratis para reservar libros, cómics, mangas, generar tickets QR y usar la lista de espera.</p>
@@ -31,8 +31,8 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">DNI / Documento Identidad *</label>
-                        <input type="text" name="dni_codigo" value="{{ old('dni_codigo') }}" required placeholder="Ej. 75849302"
+                        <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">DNI / Documento Identidad (Opcional)</label>
+                        <input type="text" name="dni_codigo" value="{{ old('dni_codigo') }}" placeholder="Ej. 75849302 (opcional)"
                                class="w-full rounded-xl bg-slate-950 border border-slate-700 px-4 py-2.5 text-sm text-white placeholder-slate-400 focus:border-amber-400 focus:outline-none">
                     </div>
 

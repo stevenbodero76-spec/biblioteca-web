@@ -71,6 +71,7 @@ class Book extends Model
     {
         return match ($this->licencia) {
             'dominio_publico' => 'Dominio Público',
+            'creative_commons' => 'Creative Commons',
             'acceso_abierto' => 'Acceso Abierto',
             default => 'Sin especificar',
         };

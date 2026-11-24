@@ -45,7 +45,7 @@
                                     NOVA<span class="text-amber-400">ETHER</span>
                                 </span>
                                 <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-400 text-slate-950">
-                                    STORE
+                                    BIBLIOTECA
                                 </span>
                             </div>
                             <span class="block text-[9px] text-slate-300 font-semibold uppercase tracking-[0.18em] -mt-0.5">
@@ -114,7 +114,7 @@
                                     <div id="nav-admin-dropdown" class="absolute right-0 top-full pt-2 w-56 hidden group-hover:block z-50">
                                         <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 space-y-0.5">
                                             <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-emerald-300">📊 Dashboard Ejecutivo</a>
-                                            <a href="{{ route('readers.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-emerald-300">👥 Clientes y Planes</a>
+                                            <a href="{{ route('readers.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-emerald-300">👥 Directorio de Lectores</a>
                                             <a href="{{ route('admin.complaints.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-300">📖 Reclamaciones</a>
                                             <a href="{{ route('admin.waitlists.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-300">🔔 Listas de Espera</a>
                                             <a href="{{ route('admin.reviews.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-300">💬 Moderar Reseñas</a>
@@ -192,7 +192,7 @@
                     @if(auth()->user()->esAdmin())
                         <div class="pt-2 mt-2 border-t border-slate-800 space-y-1">
                             <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-emerald-300 hover:bg-slate-800">📊 Panel Ejecutivo Admin</a>
-                            <a href="{{ route('readers.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-emerald-300 hover:bg-slate-800">👥 Clientes / Planes</a>
+                            <a href="{{ route('readers.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-emerald-300 hover:bg-slate-800">👥 Directorio de Lectores</a>
                             <a href="{{ route('admin.complaints.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">📖 Reclamaciones</a>
                             <a href="{{ route('admin.waitlists.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">🔔 Listas de Espera</a>
                             <a href="{{ route('admin.reviews.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">💬 Moderar Reseñas</a>
@@ -270,7 +270,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
             <div class="flex items-center gap-3">
                 <span class="font-extrabold text-sm text-amber-400">NOVAETHER™</span>
-                <span class="text-slate-300">· Librería Híbrida, Manga &amp; Bóveda Digital (Perú)</span>
+                <span class="text-slate-300">· Biblioteca Digital Pública &amp; Bóveda Abierta</span>
             </div>
             <div class="flex flex-wrap items-center gap-4">
                 <a href="{{ route('complaints.create') }}" class="inline-flex items-center gap-1.5 text-slate-200 hover:text-amber-300 font-bold border border-slate-700 px-3 py-1.5 rounded-lg transition">

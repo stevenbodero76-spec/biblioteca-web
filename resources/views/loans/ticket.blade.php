@@ -16,7 +16,7 @@
 
     @if($loan->pagoPendiente())
         <div class="mb-4 rounded-2xl bg-amber-950/60 border border-amber-400/50 p-4 text-xs text-amber-100">
-            ⏳ <strong class="text-amber-300">PAGO PENDIENTE DE VALIDACIÓN EN CAJA:</strong> Este ejemplar quedó separado para ti. Presenta este QR al pagar en mostrador o envía tu operación Yape/Plin antes del <strong>{{ $loan->expira_pago_at?->format('d/m/Y H:i') }}</strong> para evitar anulación automática.
+            ⏳ <strong class="text-amber-300">PRÉSTAMO PENDIENTE DE ENTREGA:</strong> Este ejemplar quedó separado para ti. Presenta este ticket QR en biblioteca para retirar tu libro.
         </div>
     @elseif($loan->estaAnulado())
         <div class="mb-4 rounded-2xl bg-rose-950/60 border border-rose-500/50 p-4 text-xs text-rose-100">
@@ -50,9 +50,9 @@
 
                 <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800">
                     <div>
-                        <span class="block text-[10px] font-extrabold uppercase text-slate-400">Titular / Cliente</span>
+                        <span class="block text-[10px] font-extrabold uppercase text-slate-400">Titular / Lector</span>
                         <span class="text-xs font-bold text-white">{{ $loan->reader->nombre_completo }}</span>
-                        <span class="block text-[11px] text-slate-300">Doc: {{ $loan->reader->dni_codigo }}</span>
+                        <span class="block text-[11px] text-slate-300">{{ $loan->reader->dni_codigo ? 'Doc: ' . $loan->reader->dni_codigo : 'Lector Público' }}</span>
                     </div>
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase text-slate-400">Modalidad</span>
@@ -81,7 +81,7 @@
             <div class="sm:col-span-4 flex flex-col items-center justify-center bg-white rounded-2xl p-4 border border-slate-200">
                 <img src="{{ $qrDataUri }}" alt="Código QR de verificación {{ $loan->codigoTicket() }}" class="w-40 h-40">
                 <span class="text-[10px] font-mono font-bold text-slate-800 mt-2 text-center">{{ $loan->codigoTicket() }}</span>
-                <span class="text-[10px] text-slate-600 text-center">Presenta este QR en mostrador</span>
+                <span class="text-[10px] text-slate-600 text-center">Presenta este QR al retirar tu libro</span>
             </div>
         </div>
     </div>

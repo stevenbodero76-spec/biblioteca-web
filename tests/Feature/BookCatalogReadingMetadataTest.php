@@ -151,15 +151,15 @@ class BookCatalogReadingMetadataTest extends TestCase
         $this->actingAs($admin)
             ->get(route('readers.create'))
             ->assertOk()
-            ->assertSee('DNI / Código de Carnet *')
-            ->assertSee('name="dni_codigo" value="" required', false)
+            ->assertSee('DNI / Código de Carnet (Opcional)')
+            ->assertDontSee('name="dni_codigo" value="" required', false)
             ->assertDontSee('plan_suscripcion', false)
             ->assertDontSee('plan_vence_at', false);
 
         $this->get(route('readers.edit', $reader))
             ->assertOk()
-            ->assertSee('DNI / Código de Carnet *')
-            ->assertSee('name="dni_codigo" value="'.$reader->dni_codigo.'" required', false)
+            ->assertSee('DNI / Código de Carnet (Opcional)')
+            ->assertDontSee('name="dni_codigo" value="'.$reader->dni_codigo.'" required', false)
             ->assertDontSee('plan_suscripcion', false)
             ->assertDontSee('plan_vence_at', false);
 

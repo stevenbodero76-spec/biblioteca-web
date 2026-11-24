@@ -51,7 +51,7 @@ class BookRequest extends FormRequest
             'anio_publicacion' => ['nullable', 'integer', 'min:1000', 'max:'.(date('Y') + 1)],
             'formato' => ['required', 'in:fisico,digital,ambos'],
             'idioma' => ['nullable', 'in:es,en'],
-            'licencia' => ['nullable', 'in:dominio_publico,acceso_abierto'],
+            'licencia' => ['nullable', 'in:dominio_publico,creative_commons,acceso_abierto'],
             'sinopsis' => ['nullable', 'string', 'max:5000'],
             'portada_url' => ['nullable', 'string', 'max:255', $safeMediaLocation],
             'archivo_pdf' => ['nullable', 'string', 'max:255', $safeMediaLocation],
@@ -60,8 +60,6 @@ class BookRequest extends FormRequest
             'ubicacion_estante' => ['nullable', 'string', 'max:50'],
             'stock_total' => ['required', 'integer', 'min:1', 'max:500'],
             'stock_disponible' => ['required', 'integer', 'min:0', 'lte:stock_total'],
-            'idioma' => ['nullable', 'string', 'max:10'],
-            'licencia' => ['nullable', 'in:dominio_publico,creative_commons,acceso_abierto'],
         ];
     }
 

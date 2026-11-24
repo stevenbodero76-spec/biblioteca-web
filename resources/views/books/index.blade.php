@@ -280,6 +280,7 @@
                 <select id="live-licencia-select" name="licencia" class="appearance-none w-full h-10 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
                     <option value="">Todas las licencias</option>
                     <option value="dominio_publico" @selected(($filtros['licencia'] ?? '') === 'dominio_publico')>Dominio Público</option>
+                    <option value="creative_commons" @selected(($filtros['licencia'] ?? '') === 'creative_commons')>Creative Commons</option>
                     <option value="acceso_abierto" @selected(($filtros['licencia'] ?? '') === 'acceso_abierto')>Acceso Abierto</option>
                 </select>
                 <svg class="w-4 h-4 text-slate-400 pointer-events-none absolute right-2.5 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
