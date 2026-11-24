@@ -24,7 +24,7 @@
         <div>
             <span class="text-[11px] font-black uppercase tracking-wider text-amber-400">{{ $miPerfilReader->nivelKarma() }}</span>
             <h2 class="text-lg font-extrabold text-white">{{ $miPerfilReader->puntos_karma }} Puntos Nova acumulados</h2>
-            <p class="text-xs text-slate-300">Gana +25 pts por devolución puntual y canjéalos como descuento en tu <a href="{{ route('cart.index') }}" class="text-amber-300 font-bold underline">Carrito</a>.</p>
+            <p class="text-xs text-slate-300">Gana +25 puntos por cada devolución puntual.</p>
         </div>
     </div>
     <a href="{{ route('profile.edit') }}" class="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-slate-950 border border-slate-700 hover:border-amber-400 text-xs font-bold text-slate-200 transition">
@@ -108,7 +108,7 @@
                     @if(auth()->user()->esAdmin())
                         <th class="py-3.5 px-4">Cliente</th>
                     @endif
-                    <th class="py-3.5 px-4">Modalidad / Pago</th>
+                    <th class="py-3.5 px-4">Modalidad</th>
                     <th class="py-3.5 px-4">Fechas</th>
                     <th class="py-3.5 px-4">Estado</th>
                     <th class="py-3.5 px-4 text-right">Operaciones</th>
@@ -130,7 +130,6 @@
                         @endif
                         <td class="py-3.5 px-4 text-xs">
                             <p class="font-semibold text-slate-200">{{ $loan->etiquetaMetodoPago() }}</p>
-                            <p class="font-black {{ (float) $loan->monto > 0 ? 'text-amber-300' : 'text-emerald-400' }}">S/ {{ number_format((float) $loan->monto, 2) }}</p>
                             <span class="text-[10px] font-bold {{ $loan->estado_pago === 'pagado' ? 'text-emerald-300' : ($loan->estado_pago === 'anulado' ? 'text-slate-400' : 'text-amber-300') }}">
                                 {{ $loan->etiquetaEstadoPago() }} {{ $loan->codigo_operacion ? '· ' . $loan->codigo_operacion : '' }}
                             </span>
@@ -152,14 +151,6 @@
                                     🎫 QR
                                 </a>
 
-                                @if(auth()->user()->esAdmin() && $loan->pagoPendiente())
-                                    <form action="{{ route('loans.confirmar-pago', $loan) }}" method="POST" class="inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit" class="bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black px-2.5 py-1.5 rounded-lg transition">✓ Cobrar</button>
-                                    </form>
-                                @endif
-
                                 @if(auth()->user()->esAdmin() && $loan->estado !== 'devuelto' && ! $loan->estaAnulado())
                                     <form action="{{ route('loans.devolver', $loan) }}" method="POST" class="inline">
                                         @csrf
@@ -169,13 +160,6 @@
                                 @endif
 
                                 @if(auth()->user()->esAdmin())
-                                    @if($loan->pagoPendiente())
-                                        <form action="{{ route('loans.anular', $loan) }}" method="POST" class="inline" data-confirm="¿Anular reserva #{{ $loan->id }} y liberar stock?">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="text-xs font-bold text-amber-300 hover:underline px-1">Anular</button>
-                                        </form>
-                                    @endif
                                     <form action="{{ route('loans.destroy', $loan) }}" method="POST" class="inline"
                                           data-confirm="¿Eliminar permanentemente el registro de préstamo #{{ $loan->id }}?">
                                         @csrf

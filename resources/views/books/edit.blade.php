@@ -83,18 +83,6 @@
                        class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
             </div>
 
-            <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Precio Alquiler (S/)</label>
-                <input type="number" step="0.10" name="precio_alquiler" value="{{ old('precio_alquiler', $book->precio_alquiler) }}" min="0"
-                       class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
-            </div>
-
-            <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Precio Venta Directa (S/)</label>
-                <input type="number" step="0.10" name="precio_venta" value="{{ old('precio_venta', $book->precio_venta) }}" min="0"
-                       class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
-            </div>
-
             <div class="sm:col-span-2">
                 <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Ubicación / Bóveda</label>
                 <input type="text" name="ubicacion_estante" value="{{ old('ubicacion_estante', $book->ubicacion_estante) }}"

@@ -45,7 +45,6 @@ class ApiAuthController extends Controller
                 'reader' => $user->reader ? [
                     'id' => $user->reader->id,
                     'dni_codigo' => $user->reader->dni_codigo,
-                    'plan_suscripcion' => $user->reader->plan_suscripcion,
                     'etiqueta_plan' => $user->reader->etiquetaPlan(),
                     'puntos_karma' => $user->reader->puntos_karma,
                     'estado' => $user->reader->estado,
@@ -59,7 +58,7 @@ class ApiAuthController extends Controller
         $datos = $request->validate([
             'nombres' => ['required', 'string', 'max:100'],
             'apellidos' => ['required', 'string', 'max:100'],
-            'dni_codigo' => ['required', 'string', 'max:20', 'unique:readers,dni_codigo'],
+            'dni_codigo' => ['nullable', 'string', 'max:20', 'unique:readers,dni_codigo'],
             'telefono' => ['nullable', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email', 'unique:readers,email'],
             'password' => ['required', 'string', 'min:6'],
@@ -68,7 +67,7 @@ class ApiAuthController extends Controller
 
         $user = DB::transaction(function () use ($datos) {
             $nuevo = User::create([
-                'name' => trim($datos['nombres'] . ' ' . $datos['apellidos']),
+                'name' => trim($datos['nombres'].' '.$datos['apellidos']),
                 'email' => $datos['email'],
                 'rol' => 'cliente',
                 'password' => Hash::make($datos['password']),
@@ -76,13 +75,12 @@ class ApiAuthController extends Controller
 
             $reader = Reader::create([
                 'user_id' => $nuevo->id,
-                'dni_codigo' => $datos['dni_codigo'],
+                'dni_codigo' => $datos['dni_codigo'] ?? null,
                 'nombres' => $datos['nombres'],
                 'apellidos' => $datos['apellidos'],
                 'email' => $datos['email'],
                 'telefono' => $datos['telefono'] ?? null,
                 'tipo' => 'publico',
-                'plan_suscripcion' => 'free',
                 'estado' => 'activo',
                 'puntos_karma' => 50,
             ]);

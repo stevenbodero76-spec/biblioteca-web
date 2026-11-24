@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\CancelUnpaidLoanAction;
-use App\Actions\ConfirmLoanPaymentAction;
 use App\Actions\CreateLoanAction;
 use App\Actions\ReturnLoanAction;
 use App\Http\Requests\StoreLoanRequest;
@@ -54,10 +52,12 @@ class LoanController extends Controller
         Gate::authorize('create', Loan::class);
 
         $user = $request->user();
-        $books = Book::with('category')->orderBy('titulo')->get();
+        $books = Book::with('category')->orderBy('titulo')->limit(200)->get();
         $selectedBookId = $request->query('book_id');
 
-        $readers = $user->esAdmin() ? Reader::orderBy('apellidos')->get() : collect();
+        $readers = $user->esAdmin()
+            ? Reader::where('estado', 'activo')->orderBy('apellidos')->limit(200)->get()
+            : collect();
         $miPerfilReader = $user->reader;
 
         return view('loans.create', compact('books', 'readers', 'selectedBookId', 'miPerfilReader'));
@@ -69,13 +69,9 @@ class LoanController extends Controller
 
         $loan = $createLoanAction->execute($request->validated(), $request->user());
 
-        $msg = $loan->pagoPendiente()
-            ? "Reserva #{$loan->id} registrada (Pago pendiente de verificación por 24h). Presenta este QR en mostrador o envía tu operación Yape/Plin."
-            : "Reserva #{$loan->id} confirmada y pagada con éxito. Aquí tienes tu comprobante QR.";
-
         return redirect()
             ->route('loans.ticket', $loan)
-            ->with('success', $msg);
+            ->with('success', "Préstamo público gratuito #{$loan->id} confirmado con éxito. Aquí tienes tu comprobante QR.");
     }
 
     public function ticket(Loan $loan): View
@@ -97,41 +93,13 @@ class LoanController extends Controller
             'isbn' => $loan->book->isbn,
             'lector' => $loan->reader->nombre_completo,
             'dni' => $loan->reader->dni_codigo,
-            'pago' => $loan->etiquetaMetodoPago(),
-            'estado_pago' => $loan->etiquetaEstadoPago(),
-            'monto' => (string) $loan->monto,
+            'modalidad' => $loan->etiquetaMetodoPago(),
             'vence' => $loan->fecha_devolucion_esperada->format('Y-m-d'),
         ], JSON_UNESCAPED_UNICODE);
 
         $qrDataUri = (new QRCode($options))->render($payload);
 
         return view('loans.ticket', compact('loan', 'qrDataUri'));
-    }
-
-    public function confirmarPago(Request $request, Loan $loan, ConfirmLoanPaymentAction $action): RedirectResponse
-    {
-        Gate::authorize('managePayments', Loan::class);
-
-        $datos = $request->validate([
-            'codigo_operacion' => ['nullable', 'string', 'max:60'],
-        ]);
-
-        if (! $action->execute($loan, $datos['codigo_operacion'] ?? null)) {
-            return back()->with('error', 'Este préstamo no tiene pago pendiente por confirmar.');
-        }
-
-        return back()->with('success', "Pago del Ticket {$loan->codigoTicket()} verificado y confirmado en caja.");
-    }
-
-    public function anular(Loan $loan, CancelUnpaidLoanAction $action): RedirectResponse
-    {
-        Gate::authorize('managePayments', Loan::class);
-
-        if (! $action->execute($loan)) {
-            return back()->with('error', 'Este registro ya fue cerrado o devuelto anteriormente.');
-        }
-
-        return back()->with('success', "Reserva {$loan->codigoTicket()} anulada y stock liberado automáticamente.");
     }
 
     public function devolver(Loan $loan, ReturnLoanAction $returnLoanAction): RedirectResponse

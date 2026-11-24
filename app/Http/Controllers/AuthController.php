@@ -50,7 +50,7 @@ class AuthController extends Controller
 
             return redirect()
                 ->intended($destino)
-                ->with('success', '¡Bienvenido(a) a NOVAETHER™, ' . $user->name . '!');
+                ->with('success', '¡Bienvenido(a) a NOVAETHER™, '.$user->name.'!');
         }
 
         return back()
@@ -72,7 +72,7 @@ class AuthController extends Controller
         $datos = $request->validate([
             'nombres' => ['required', 'string', 'max:100'],
             'apellidos' => ['required', 'string', 'max:100'],
-            'dni_codigo' => ['required', 'string', 'max:20', 'unique:readers,dni_codigo'],
+            'dni_codigo' => ['nullable', 'string', 'max:20', 'unique:readers,dni_codigo'],
             'telefono' => ['nullable', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email', 'unique:readers,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
@@ -80,7 +80,7 @@ class AuthController extends Controller
 
         $user = DB::transaction(function () use ($datos) {
             $nuevoUsuario = User::create([
-                'name' => trim($datos['nombres'] . ' ' . $datos['apellidos']),
+                'name' => trim($datos['nombres'].' '.$datos['apellidos']),
                 'email' => $datos['email'],
                 'rol' => 'cliente',
                 'password' => Hash::make($datos['password']),
@@ -88,13 +88,12 @@ class AuthController extends Controller
 
             $reader = Reader::create([
                 'user_id' => $nuevoUsuario->id,
-                'dni_codigo' => $datos['dni_codigo'],
+                'dni_codigo' => $datos['dni_codigo'] ?? null,
                 'nombres' => $datos['nombres'],
                 'apellidos' => $datos['apellidos'],
                 'email' => $datos['email'],
                 'telefono' => $datos['telefono'] ?? null,
                 'tipo' => 'publico',
-                'plan_suscripcion' => 'free',
                 'estado' => 'activo',
                 'puntos_karma' => 50,
             ]);

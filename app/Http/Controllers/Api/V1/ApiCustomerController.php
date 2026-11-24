@@ -2,20 +2,16 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Actions\CheckoutCartAction;
 use App\Actions\CreateLoanAction;
 use App\Actions\SubmitBookReviewAction;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\CheckoutOrderRequest;
 use App\Models\Book;
 use App\Models\Favorite;
 use App\Models\Loan;
-use App\Models\Order;
 use App\Models\Waitlist;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class ApiCustomerController extends Controller
@@ -36,9 +32,7 @@ class ApiCustomerController extends Controller
                 'id' => $reader->id,
                 'dni_codigo' => $reader->dni_codigo,
                 'telefono' => $reader->telefono,
-                'plan_suscripcion' => $reader->plan_suscripcion,
                 'etiqueta_plan' => $reader->etiquetaPlan(),
-                'plan_vence_at' => $reader->plan_vence_at?->toDateString(),
                 'puntos_karma' => $reader->puntos_karma,
                 'nivel_karma' => $reader->nivelKarma(),
                 'estado' => $reader->estado,
@@ -46,7 +40,6 @@ class ApiCustomerController extends Controller
             'resumen' => [
                 'prestamos_activos' => $reader?->prestamosActivosCount() ?? 0,
                 'favoritos' => $user->favorites()->count(),
-                'ordenes' => $user->orders()->count(),
             ],
         ]);
     }
@@ -71,7 +64,7 @@ class ApiCustomerController extends Controller
 
         DB::transaction(function () use ($user, $reader, $datos) {
             $user->update([
-                'name' => trim($datos['nombres'] . ' ' . $datos['apellidos']),
+                'name' => trim($datos['nombres'].' '.$datos['apellidos']),
                 'email' => $datos['email'],
             ]);
 
@@ -116,7 +109,7 @@ class ApiCustomerController extends Controller
     {
         $reader = $request->user()->reader;
         if (! $reader || $reader->estado !== 'activo') {
-            return response()->json(['message' => 'Se requiere una ficha de cliente activa.'], 422);
+            return response()->json(['message' => 'Se requiere una ficha de lector activa.'], 422);
         }
 
         if ($book->estaDisponible()) {
@@ -196,77 +189,31 @@ class ApiCustomerController extends Controller
     {
         $datos = $request->validate([
             'book_id' => ['required', 'integer', 'exists:books,id'],
-            'duracion_dias' => ['required', 'integer', 'in:7,14,30'],
-            'metodo_pago' => ['required', 'in:membresia,yape_plin,mostrador'],
+            'duracion_dias' => ['nullable', 'integer', 'in:7,14,30'],
+            'metodo_pago' => ['nullable', 'in:gratuito,membresia,yape_plin,mostrador'],
             'codigo_operacion' => ['nullable', 'string', 'max:60'],
         ]);
 
         $user = $request->user();
         if (! $user->reader) {
-            return response()->json(['message' => 'Tu cuenta no posee ficha de cliente activa.'], 422);
+            return response()->json(['message' => 'Tu cuenta no posee ficha de lector activa.'], 422);
         }
+
+        $duracion = (int) ($datos['duracion_dias'] ?? 7);
 
         $loan = $action->execute([
             'book_id' => $datos['book_id'],
             'reader_id' => $user->reader->id,
             'fecha_prestamo' => now()->toDateString(),
-            'fecha_devolucion_esperada' => now()->addDays((int) $datos['duracion_dias'])->toDateString(),
-            'metodo_pago' => $datos['metodo_pago'],
+            'fecha_devolucion_esperada' => now()->addDays($duracion)->toDateString(),
+            'metodo_pago' => $datos['metodo_pago'] ?? 'gratuito',
             'codigo_operacion' => $datos['codigo_operacion'] ?? null,
         ], $user);
 
         return response()->json([
-            'message' => 'Reserva generada correctamente.',
+            'message' => 'Préstamo gratuito generado correctamente.',
             'codigo_ticket' => $loan->codigoTicket(),
             'data' => $loan->load('book'),
-        ], 201);
-    }
-
-    public function orders(Request $request): JsonResponse
-    {
-        $orders = Order::with('items.book')
-            ->visiblePara($request->user())
-            ->latest()
-            ->paginate(15);
-
-        return response()->json($orders);
-    }
-
-    public function showOrder(Request $request, Order $order): JsonResponse
-    {
-        Gate::authorize('view', $order);
-
-        return response()->json([
-            'data' => $order->load('items.book', 'items.loan'),
-        ]);
-    }
-
-    public function storeOrder(CheckoutOrderRequest $request, CheckoutCartAction $action): JsonResponse
-    {
-        $datos = $request->validated();
-
-        $bookIds = collect($datos['items'])->pluck('book_id')->unique()->all();
-        $books = Book::whereIn('id', $bookIds)->get()->keyBy('id');
-
-        $cartItems = collect($datos['items'])->map(function (array $entry) use ($books) {
-            $book = $books->get((int) $entry['book_id']);
-            $tipo = $entry['tipo_operacion'];
-            $qty = $tipo === 'venta' ? max(1, (int) ($entry['cantidad'] ?? 1)) : 1;
-
-            return [
-                'book_id' => $book->id,
-                'book' => $book,
-                'tipo_operacion' => $tipo,
-                'cantidad' => $qty,
-                'duracion_dias' => $tipo === 'alquiler' ? (int) ($entry['duracion_dias'] ?? 7) : null,
-            ];
-        });
-
-        $order = $action->execute($cartItems, $request->user(), $datos);
-
-        return response()->json([
-            'message' => 'Orden registrada correctamente.',
-            'data' => $order->load('items.book', 'items.loan'),
         ], 201);
     }
 }

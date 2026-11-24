@@ -304,7 +304,7 @@
 
 <!-- CONTENEDOR DINÁMICO DE RESULTADOS (Se actualiza vía AJAX sin recargar) -->
 <div id="books-grid-container" class="transition-opacity duration-200">
-    @include('books.partials.grid', ['books' => $books, 'favoriteBookIds' => $favoriteBookIds, 'filtros' => $filtros])
+    @include('books.partials.grid', ['books' => $books, 'favoriteBookIds' => $favoriteBookIds, 'filtros' => $filtros, 'librosExternos' => $librosExternos ?? []])
 </div>
 
 @endsection
