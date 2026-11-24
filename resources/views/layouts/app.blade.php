@@ -18,7 +18,7 @@
 <body class="text-slate-100 min-h-screen flex flex-col selection:bg-amber-400 selection:text-slate-950">
 
     <!-- Cintillo superior -->
-    <div class="no-print bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 text-slate-950 text-xs font-extrabold py-2 px-4 text-center tracking-wide shadow-sm">
+    <div class="no-print bg-linear-to-r from-amber-500 via-amber-400 to-orange-500 text-slate-950 text-xs font-extrabold py-2 px-4 text-center tracking-wide shadow-sm">
         Biblioteca Pública &amp; Bóveda Digital 100% Gratuita
     </div>
 
@@ -28,8 +28,8 @@
             <div class="flex items-center justify-between h-20 gap-3">
                 <!-- Logo Vectorial NOVAETHER -->
                 <div class="flex items-center gap-5 min-w-0">
-                    <a href="{{ route('home') }}" class="flex items-center gap-3 group flex-shrink-0">
-                        <div class="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-[2px] shadow-lg shadow-amber-500/20 group-hover:scale-105 transition duration-300">
+                    <a href="{{ route('home') }}" class="flex items-center gap-3 group shrink-0">
+                        <div class="relative w-10 h-10 rounded-xl bg-linear-to-br from-amber-400 to-orange-500 p-0.5 shadow-lg shadow-amber-500/20 group-hover:scale-105 transition duration-300">
                             <div class="w-full h-full bg-[#090D16] rounded-[10px] flex items-center justify-center">
                                 <svg class="w-5 h-5" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                     <path d="M18 8C13.5 5.5 7.5 5.5 4 7.5V27.5C7.5 25.5 13.5 25.5 18 28C22.5 25.5 28.5 25.5 32 27.5V7.5C28.5 5.5 22.5 5.5 18 8Z" stroke="#FBBF24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -91,7 +91,7 @@
                         </a>
 
                         @auth
-                            <span class="h-4 w-[1px] bg-slate-700 mx-1"></span>
+                            <span class="h-4 w-px bg-slate-700 mx-1"></span>
 
                             <a href="{{ route('favorites.index') }}"
                                class="px-2.5 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request()->routeIs('favorites.*') ? 'bg-rose-500 text-white font-extrabold' : 'text-rose-300 hover:bg-slate-800' }}">
@@ -155,7 +155,7 @@
                             Iniciar Sesión
                         </a>
                         <a href="{{ route('register') }}"
-                           class="hidden sm:inline-block bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2 rounded-xl shadow-lg shadow-amber-500/20 transition">
+                           class="hidden sm:inline-block bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2 rounded-xl shadow-lg shadow-amber-500/20 transition">
                             Crear Cuenta
                         </a>
                     @endauth
@@ -327,7 +327,7 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-12">
                 <div class="sm:col-span-4 bg-slate-950 p-6 flex flex-col items-center justify-center border-b sm:border-b-0 sm:border-r border-slate-800">
-                    <div class="w-36 aspect-[2/3] rounded-xl overflow-hidden bg-slate-900 border border-slate-700 shadow-lg flex items-center justify-center">
+                    <div class="w-36 aspect-2/3 rounded-xl overflow-hidden bg-slate-900 border border-slate-700 shadow-lg flex items-center justify-center">
                         <img id="qv-portada" src="" alt="" class="w-full h-full object-cover hidden">
                         <span id="qv-portada-fallback" class="text-4xl">📚</span>
                     </div>
@@ -338,6 +338,8 @@
                     <div class="flex flex-wrap items-center gap-2 pr-6">
                         <span id="qv-categoria" class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30"></span>
                         <span id="qv-stock" class="text-[10px] font-black px-2.5 py-0.5 rounded-full"></span>
+                        <span id="qv-idioma" class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-sky-500/15 text-sky-200 border border-sky-500/30"></span>
+                        <span id="qv-licencia" class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-violet-500/15 text-violet-200 border border-violet-500/30"></span>
                     </div>
 
                     <h3 id="qv-titulo" class="font-serif-editorial text-2xl font-bold text-white leading-tight"></h3>
@@ -351,8 +353,8 @@
                     <p id="qv-sinopsis" class="text-xs text-slate-300 leading-relaxed max-h-28 overflow-y-auto"></p>
 
                     <div class="pt-3 flex flex-wrap gap-2 border-t border-slate-800">
-                        <a id="qv-reserve-link" href="#" class="flex-1 text-center bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl transition shadow">
-                            Reservar ahora
+                        <a id="qv-read-link" href="#" target="_blank" rel="noopener noreferrer" class="flex-1 text-center bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl transition shadow">
+                            📖 Leer / Abrir
                         </a>
                         <a id="qv-show-link" href="#" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition">
                             Ver ficha →

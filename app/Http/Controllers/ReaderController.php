@@ -21,7 +21,6 @@ class ReaderController extends Controller
 
         $readers = Reader::with('user')
             ->withCount([
-                'loans',
                 'loans as prestamos_activos_count' => fn ($q) => $q->whereIn('estado', ['prestado', 'vencido'])->where('estado_pago', '!=', 'anulado'),
             ])
             ->filtro($filtros)
@@ -44,7 +43,7 @@ class ReaderController extends Controller
 
         DB::transaction(function () use ($datos, $clavePlana) {
             $user = User::create([
-                'name' => trim($datos['nombres'] . ' ' . $datos['apellidos']),
+                'name' => trim($datos['nombres'].' '.$datos['apellidos']),
                 'email' => $datos['email'],
                 'rol' => 'cliente',
                 'password' => Hash::make($clavePlana),
@@ -77,7 +76,7 @@ class ReaderController extends Controller
 
         return redirect()
             ->route('readers.index')
-            ->with('success', 'Cliente / lector registrado y sincronizado con cuenta de usuario.' . $infoClave);
+            ->with('success', 'Cliente / lector registrado y sincronizado con cuenta de usuario.'.$infoClave);
     }
 
     public function edit(Reader $reader): View

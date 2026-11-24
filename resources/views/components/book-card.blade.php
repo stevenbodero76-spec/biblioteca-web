@@ -1,6 +1,11 @@
 @props(['book', 'esFavorito' => false])
 
 @php
+    $fuentesLectura = $book->getAttribute('fuentes_lectura') ?? [];
+    $fuentesRapidas = collect($fuentesLectura)
+        ->whereIn('nombre', ['Open Library', 'Internet Archive', 'MangaPlus'])
+        ->values();
+
     $quickViewPayload = [
         'id' => $book->id,
         'titulo' => $book->titulo,
@@ -10,7 +15,11 @@
         'isbn' => $book->isbn,
         'categoria' => ($book->category->icono ?? '📚') . ' ' . ($book->category->nombre ?? 'General'),
         'formato' => strtoupper($book->formato),
+        'idioma' => $book->etiquetaIdioma(),
+        'licencia' => $book->etiquetaLicencia(),
         'sinopsis' => $book->sinopsis ?? 'Obra disponible en el catálogo oficial de NOVAETHER™.',
+        'read_url' => $book->archivo_pdf ?: ($fuentesLectura[0]['url'] ?? route('books.show', $book)),
+        'fuentes' => $fuentesLectura,
         'portada_url' => $book->portada_url,
         'disponible' => $book->estaDisponible(),
         'stock_texto' => $book->estaDisponible()
@@ -20,8 +29,6 @@
             ? '★ ' . number_format((float) $book->reviews_avg_rating, 1) . ' (' . $book->reviews_count . ' reseñas)'
             : '✨ Estreno sin reseñas aún',
         'show_url' => route('books.show', $book),
-        'reserve_url' => route('loans.create', ['book_id' => $book->id]),
-
     ];
 @endphp
 
@@ -30,7 +37,7 @@
         <div class="p-5 flex gap-4">
             <!-- Portada -->
             <a href="{{ route('books.show', $book) }}"
-               class="w-28 h-40 flex-shrink-0 bg-slate-950 rounded-xl overflow-hidden shadow-lg border border-slate-700/80 flex items-center justify-center relative">
+               class="w-28 h-40 shrink-0 bg-slate-950 rounded-xl overflow-hidden shadow-lg border border-slate-700/80 flex items-center justify-center relative">
                 @if($book->portada_url)
                     <img src="{{ $book->portada_url }}" alt="Portada de {{ $book->titulo }}" class="cover-shine w-full h-full object-cover"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -47,7 +54,7 @@
                     </span>
 
                     @auth
-                        <form action="{{ route('favorites.toggle', $book) }}" method="POST" class="flex-shrink-0 js-favorite-form">
+                        <form action="{{ route('favorites.toggle', $book) }}" method="POST" class="shrink-0 js-favorite-form">
                             @csrf
                             <button type="submit" data-no-loading="true"
                                     class="js-favorite-btn text-sm leading-none p-1 rounded-lg hover:bg-slate-800 transition transform active:scale-125"
@@ -65,6 +72,15 @@
                 </a>
 
                 <p class="text-xs font-semibold text-slate-200 mt-1">✍️ {{ $book->autor }}</p>
+
+                <div class="mt-2 flex flex-wrap gap-1.5">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-200 border border-sky-500/30">
+                        {{ $book->idioma === 'es' ? '🇪🇸' : ($book->idioma === 'en' ? '🇬🇧' : '🌐') }} {{ $book->etiquetaIdioma() }}
+                    </span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-500/15 text-violet-200 border border-violet-500/30">
+                        ⚖️ {{ $book->etiquetaLicencia() }}
+                    </span>
+                </div>
 
                 <!-- Calificación real -->
                 <div class="flex items-center gap-2 mt-1">
@@ -100,31 +116,22 @@
         @endif
     </div>
 
-    <!-- Barra inferior: Vista rápida y préstamo / lista de espera -->
-    <div class="bg-slate-950/90 px-4 py-3.5 border-t border-slate-800 flex items-center justify-between gap-1.5">
-        <button type="button"
-                data-book='@json($quickViewPayload)'
-                class="js-quickview-btn h-9 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-xs font-bold transition inline-flex items-center gap-1"
-                title="Vista Rápida">
-            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            <span class="hidden sm:inline">Ver</span>
-        </button>
-
-        @if($book->estaDisponible())
-            <a href="{{ route('loans.create', ['book_id' => $book->id]) }}"
-               class="flex-1 h-9 inline-flex items-center justify-center bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-3 rounded-xl transition shadow truncate">
-                Alquilar
-            </a>
-        @else
+    <div class="bg-slate-950/90 px-4 py-3.5 border-t border-slate-800 space-y-2.5">
+        <div class="flex items-center gap-2">
             <a href="{{ route('books.show', $book) }}"
-               class="flex-1 h-9 inline-flex items-center justify-center bg-rose-950/90 hover:bg-rose-900 text-rose-200 border border-rose-700 text-xs font-extrabold px-4 rounded-xl transition">
-                Lista de Espera
+               class="flex-1 h-9 inline-flex items-center justify-center bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-3 rounded-xl transition shadow truncate">
+                📖 Leer / Abrir
             </a>
-        @endif
-
+            <button type="button"
+                    data-book='@json($quickViewPayload)'
+                    class="js-quickview-btn h-9 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-xs font-bold transition inline-flex items-center gap-1"
+                    title="Vista rápida">
+                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <span>Vista rápida</span>
+            </button>
         @auth
             @if(auth()->user()->esAdmin())
                 <div class="flex items-center gap-0.5">
@@ -141,5 +148,17 @@
                 </div>
             @endif
         @endauth
+        </div>
+
+        <div class="flex flex-wrap gap-1.5">
+            @foreach($fuentesRapidas as $fuente)
+                <a href="{{ $fuente['url'] }}" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] font-bold text-slate-200 transition hover:border-amber-400/60 hover:text-amber-200"
+                   aria-label="Abrir {{ $fuente['nombre'] }} para {{ $book->titulo }}">
+                    <span aria-hidden="true">{{ $fuente['icono'] }}</span>
+                    <span>{{ $fuente['nombre'] }}</span>
+                </a>
+            @endforeach
+        </div>
     </div>
 </div>
