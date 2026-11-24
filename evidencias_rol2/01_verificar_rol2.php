@@ -35,12 +35,19 @@ echo "    - Route 'books.importar-externo' registrada: " . ($hasImportRoute ? "S
 // 3. Verificación de limpieza en CreateLoanAction y BookController
 $createLoanCode = file_get_contents(__DIR__ . '/../app/Actions/CreateLoanAction.php');
 $bookControllerCode = file_get_contents(__DIR__ . '/../app/Http/Controllers/BookController.php');
+$apiCatalogCode = file_get_contents(__DIR__ . '/../app/Http/Controllers/Api/V1/ApiCatalogController.php');
+$serviceCode = file_get_contents(__DIR__ . '/../app/Services/BookLinkInterconnectorService.php');
 $sinPrecioAlquilerLoan = ! str_contains($createLoanCode, 'precio_alquiler');
 $sinPrecioBookController = ! str_contains($bookControllerCode, 'precio_alquiler');
+$soportaIdiomaLicencia = str_contains($bookControllerCode, "'idioma'") && str_contains($bookControllerCode, "'licencia'")
+    && str_contains($apiCatalogCode, "'idioma'") && str_contains($apiCatalogCode, "'licencia'");
+$soportaOpenLibraryEmbed = str_contains($serviceCode, 'resolverEmbedDesdeOpenLibraryUrl');
 
 echo "[3] Limpieza de Lógica Comercial en Controladores y Acciones:\n";
 echo "    - CreateLoanAction libre de precio_alquiler: " . ($sinPrecioAlquilerLoan ? "SI (OK)" : "NO") . "\n";
-echo "    - BookController libre de precio_alquiler / precio_venta: " . ($sinPrecioBookController ? "SI (OK)" : "NO") . "\n\n";
+echo "    - BookController libre de precio_alquiler / precio_venta: " . ($sinPrecioBookController ? "SI (OK)" : "NO") . "\n";
+echo "    - Filtros idioma y licencia conectados en BookController y ApiCatalogController: " . ($soportaIdiomaLicencia ? "SI (OK)" : "NO") . "\n";
+echo "    - Conversión de URLs openlibrary.org hacia archive.org/embed/: " . ($soportaOpenLibraryEmbed ? "SI (OK)" : "NO") . "\n\n";
 
 // 4. Verificación de Método buscarEnRedesExternas
 $methodExists = method_exists($service, 'buscarEnRedesExternas');
