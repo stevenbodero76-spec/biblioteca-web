@@ -21,7 +21,7 @@ class BookController extends Controller
 {
     public function index(Request $request, BookLinkInterconnectorService $interconnector): View|JsonResponse
     {
-        $filtros = $request->only(['buscar', 'category_id', 'formato', 'disponibilidad', 'orden']);
+        $filtros = $request->only(['buscar', 'category_id', 'formato', 'idioma', 'licencia', 'disponibilidad', 'orden']);
 
         $books = Book::with('category')
             ->withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
@@ -123,7 +123,9 @@ class BookController extends Controller
             ->loadCount(['reviews' => fn ($q) => $q->where('visible', true)]);
 
         $enlacesLectura = $interconnector->resolverEnlacesLectura($book);
-        if (empty($book->archivo_pdf)) {
+        if (! empty($enlacesLectura['embed_url'])) {
+            $book->setAttribute('archivo_pdf', $enlacesLectura['embed_url']);
+        } elseif (empty($book->archivo_pdf)) {
             $book->setAttribute('archivo_pdf', $enlacesLectura['principal_url']);
         }
 
@@ -270,6 +272,8 @@ class BookController extends Controller
             'portada_url' => ['nullable', 'url', 'max:500'],
             'archivo_pdf' => ['required', 'url', 'max:500'],
             'category_id' => ['nullable', 'exists:categories,id'],
+            'idioma' => ['nullable', 'string', 'max:10'],
+            'licencia' => ['nullable', 'in:dominio_publico,creative_commons,acceso_abierto'],
         ]);
 
         $categoriaId = $datos['category_id'] ?? Category::first()?->id;
@@ -294,8 +298,8 @@ class BookController extends Controller
             'editorial' => $datos['editorial'] ?: 'Red Pública Digital (Open Library / Gutenberg)',
             'anio_publicacion' => $datos['anio_publicacion'] ?? (int) date('Y'),
             'formato' => 'digital',
-            'idioma' => 'es',
-            'licencia' => 'dominio_publico',
+            'idioma' => $datos['idioma'] ?? 'es',
+            'licencia' => $datos['licencia'] ?? 'dominio_publico',
             'sinopsis' => 'Obra importada desde la red abierta global (Open Library & Gutenberg). Disponible para lectura pública y visor embebido.',
             'portada_url' => $datos['portada_url'] ?? null,
             'archivo_pdf' => $datos['archivo_pdf'],

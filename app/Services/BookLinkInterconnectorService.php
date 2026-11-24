@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Http;
 class BookLinkInterconnectorService
 {
     /**
-     * Convierte enlaces de archive.org/details/{id} o similares a su visor embebible directo.
+     * Convierte enlaces de archive.org/details/{id}, openlibrary.org/... o similares a su visor embebible directo.
      */
     public function convertirAEmbedUrl(?string $url): ?string
     {
@@ -33,6 +33,11 @@ class BookLinkInterconnectorService
             }
         }
 
+        // Caso openlibrary.org/isbn/..., /books/OL...M, /works/OL...W o /search?q=...
+        if (preg_match('~^https?://(?:www\.)?openlibrary\.org/~i', $trimmed)) {
+            return $this->resolverEmbedDesdeOpenLibraryUrl($trimmed);
+        }
+
         // Caso archivo PDF local o en almacenamiento
         if (str_starts_with($trimmed, '/storage/') || str_ends_with(strtolower(parse_url($trimmed, PHP_URL_PATH) ?? ''), '.pdf')) {
             return $trimmed;
@@ -51,7 +56,7 @@ class BookLinkInterconnectorService
      *     fuentes: array<int, array{nombre: string, tipo: string, url: string, icono: string}>
      * }
      */
-    public function resolverEnlacesLectura(Book $book): array
+    public function resolverEnlacesLectura(Book $book, bool $resolverOpenLibrary = true): array
     {
         $cleanIsbn = preg_replace('/[^0-9Xx]/', '', (string) $book->isbn);
         $queryTituloAutor = urlencode(trim($book->titulo . ' ' . $book->autor));
@@ -71,13 +76,16 @@ class BookLinkInterconnectorService
             ? (string) $book->archivo_pdf
             : $openLibraryUrl;
 
-        $embedUrl = $this->convertirAEmbedUrl($principalUrl);
+        $esUrlOpenLibrary = (bool) preg_match('~^https?://(?:www\.)?openlibrary\.org/~i', $principalUrl);
+        $embedUrl = ($esUrlOpenLibrary && ! $resolverOpenLibrary)
+            ? null
+            : $this->convertirAEmbedUrl($principalUrl);
 
         if (! $embedUrl && $book->esPdfEmbeddable()) {
             $embedUrl = $book->visor_embed_url ?? $book->archivo_pdf;
         }
 
-        if ($embedUrl && str_contains($principalUrl, 'archive.org/details/')) {
+        if ($embedUrl && ($esUrlOpenLibrary || str_contains($principalUrl, 'archive.org/details/'))) {
             $principalUrl = $embedUrl;
         }
 
@@ -141,6 +149,7 @@ class BookLinkInterconnectorService
      */
     public function extraerEnlacesDesdeOpenLibrary(string $cleanIsbn, array $payload): array
     {
+        $embedUrl = $this->extraerEmbedArchiveDesdeOpenLibraryPayload($payload);
         $ebooks = $payload['ebooks'] ?? [];
         $readUrl = null;
 
@@ -149,11 +158,14 @@ class BookLinkInterconnectorService
                 ?? $ebooks[0]['borrow_url']
                 ?? $ebooks[0]['preview_url']
                 ?? null;
+
+            if ($readUrl && str_contains($readUrl, 'archive.org/details/')) {
+                $readUrl = $this->convertirAEmbedUrl($readUrl) ?? $readUrl;
+            }
         }
 
-        if (! $readUrl && ! empty($payload['identifiers']['internet_archive'][0])) {
-            $iaId = $payload['identifiers']['internet_archive'][0];
-            $readUrl = "https://archive.org/embed/{$iaId}";
+        if (! $readUrl && $embedUrl) {
+            $readUrl = $embedUrl;
         }
 
         if (! $readUrl) {
@@ -179,6 +191,139 @@ class BookLinkInterconnectorService
                 ],
             ],
         ];
+    }
+
+    /**
+     * Resuelve una URL de Open Library (/isbn/{isbn}, /books/OL...M, /works/OL...W, /search?q=...)
+     * hacia su visor embebido oficial https://archive.org/embed/{id} cuando existe copia digital en IA.
+     */
+    private function resolverEmbedDesdeOpenLibraryUrl(string $url): ?string
+    {
+        $parsed = parse_url($url);
+        if (! is_array($parsed)) {
+            return null;
+        }
+
+        parse_str($parsed['query'] ?? '', $queryParams);
+        if (! empty($queryParams['ia']) && preg_match('/^[a-zA-Z0-9._-]+$/', (string) $queryParams['ia'])) {
+            return 'https://archive.org/embed/' . $queryParams['ia'];
+        }
+
+        $path = $parsed['path'] ?? '';
+        $cacheKey = 'ol_embed_url_' . md5($path . '|' . ($queryParams['q'] ?? ''));
+
+        if (Cache::has($cacheKey)) {
+            $cached = Cache::get($cacheKey);
+
+            return $cached !== '' ? (string) $cached : null;
+        }
+
+        $embedUrl = null;
+        $consultaExitosa = false;
+
+        try {
+            if (preg_match('~^/isbn/([0-9Xx-]+)~i', $path, $m)) {
+                $cleanIsbn = preg_replace('/[^0-9Xx]/', '', $m[1]);
+                if ($cleanIsbn !== '') {
+                    $res = Http::timeout(2)->acceptJson()->get('https://openlibrary.org/api/books', [
+                        'bibkeys' => "ISBN:{$cleanIsbn}",
+                        'format' => 'json',
+                        'jscmd' => 'data',
+                    ]);
+                    if ($res->successful()) {
+                        $consultaExitosa = true;
+                        $payload = $res->json("ISBN:{$cleanIsbn}");
+                        if (is_array($payload)) {
+                            $embedUrl = $this->extraerEmbedArchiveDesdeOpenLibraryPayload($payload);
+                        }
+                    }
+                }
+            } elseif (preg_match('~^/books/(OL[0-9]+M)~i', $path, $m)) {
+                $olid = strtoupper($m[1]);
+                $res = Http::timeout(2)->acceptJson()->get("https://openlibrary.org/books/{$olid}.json");
+                if ($res->successful()) {
+                    $consultaExitosa = true;
+                    $payload = $res->json();
+                    if (is_array($payload)) {
+                        $embedUrl = $this->extraerEmbedArchiveDesdeOpenLibraryPayload($payload);
+                    }
+                }
+            } elseif (preg_match('~^/works/(OL[0-9]+W)~i', $path, $m)) {
+                $olid = strtoupper($m[1]);
+                $res = Http::timeout(2)->acceptJson()->get("https://openlibrary.org/works/{$olid}/editions.json", [
+                    'limit' => 5,
+                ]);
+                if ($res->successful()) {
+                    $consultaExitosa = true;
+                    foreach ($res->json('entries') ?? [] as $entry) {
+                        if (is_array($entry)) {
+                            $embedUrl = $this->extraerEmbedArchiveDesdeOpenLibraryPayload($entry);
+                            if ($embedUrl) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            } elseif (str_starts_with($path, '/search') && ! empty($queryParams['q'])) {
+                $res = Http::timeout(2)->acceptJson()->get('https://openlibrary.org/search.json', [
+                    'q' => (string) $queryParams['q'],
+                    'fields' => 'ia',
+                    'limit' => 3,
+                ]);
+                if ($res->successful()) {
+                    $consultaExitosa = true;
+                    foreach ($res->json('docs') ?? [] as $doc) {
+                        if (! empty($doc['ia'][0]) && preg_match('/^[a-zA-Z0-9._-]+$/', (string) $doc['ia'][0])) {
+                            $embedUrl = 'https://archive.org/embed/' . $doc['ia'][0];
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if ($embedUrl) {
+            Cache::put($cacheKey, $embedUrl, now()->addDays(7));
+        } elseif ($consultaExitosa) {
+            Cache::put($cacheKey, '', now()->addHours(6));
+        }
+
+        return $embedUrl;
+    }
+
+    /**
+     * Extrae la URL embebida de Internet Archive desde un payload JSON de Open Library.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function extraerEmbedArchiveDesdeOpenLibraryPayload(array $payload): ?string
+    {
+        $iaId = $payload['identifiers']['internet_archive'][0]
+            ?? $payload['ocaid']
+            ?? null;
+
+        if (is_string($iaId) && trim($iaId) !== '' && preg_match('/^[a-zA-Z0-9._-]+$/', trim($iaId))) {
+            return 'https://archive.org/embed/' . trim($iaId);
+        }
+
+        $ebooks = $payload['ebooks'] ?? [];
+        if (is_array($ebooks)) {
+            foreach ($ebooks as $ebook) {
+                if (! is_array($ebook)) {
+                    continue;
+                }
+                foreach (['read_url', 'borrow_url', 'preview_url'] as $key) {
+                    $candidate = (string) ($ebook[$key] ?? '');
+                    if ($candidate !== '' && preg_match('~archive\.org/(?:details|embed)/([^/?#]+)~i', $candidate, $m)) {
+                        return 'https://archive.org/embed/' . $m[1];
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     public function construirUrlLecturaPorDefecto(string $isbn, string $titulo): string
@@ -225,7 +370,7 @@ class BookLinkInterconnectorService
 
         return $candidatos
             ->map(function (Book $item) {
-                $enlaces = $this->resolverEnlacesLectura($item);
+                $enlaces = $this->resolverEnlacesLectura($item, false);
                 $item->setAttribute('enlace_lectura_directa', $enlaces['principal_url']);
                 $item->setAttribute('fuentes_lectura', $enlaces['fuentes']);
 
