@@ -60,8 +60,8 @@ class BookRequest extends FormRequest
             'ubicacion_estante' => ['nullable', 'string', 'max:50'],
             'stock_total' => ['required', 'integer', 'min:1', 'max:500'],
             'stock_disponible' => ['required', 'integer', 'min:0', 'lte:stock_total'],
-            'precio_alquiler' => ['nullable', 'numeric', 'min:0', 'max:999'],
-            'precio_venta' => ['nullable', 'numeric', 'min:0', 'max:9999'],
+            'idioma' => ['nullable', 'string', 'max:10'],
+            'licencia' => ['nullable', 'in:dominio_publico,creative_commons,acceso_abierto'],
         ];
     }
 

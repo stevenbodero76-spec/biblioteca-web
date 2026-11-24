@@ -18,8 +18,6 @@ class Reader extends Model
         'email',
         'telefono',
         'tipo',
-        'plan_suscripcion',
-        'plan_vence_at',
         'estado',
         'puntos_karma',
     ];
@@ -27,7 +25,6 @@ class Reader extends Model
     protected function casts(): array
     {
         return [
-            'plan_vence_at' => 'date',
             'puntos_karma' => 'integer',
         ];
     }
@@ -40,11 +37,6 @@ class Reader extends Model
     public function loans(): HasMany
     {
         return $this->hasMany(Loan::class);
-    }
-
-    public function orders(): HasMany
-    {
-        return $this->hasMany(Order::class);
     }
 
     public function waitlists(): HasMany
@@ -70,25 +62,12 @@ class Reader extends Model
             ->count();
     }
 
-    public function puedeUsarMembresia(): bool
-    {
-        if ($this->estado !== 'activo') {
-            return false;
-        }
-
-        if ($this->plan_suscripcion === 'free') {
-            return false;
-        }
-
-        return $this->plan_vence_at === null || $this->plan_vence_at->gte(today());
-    }
-
     public function etiquetaPlan(): string
     {
-        return match ($this->plan_suscripcion) {
-            'pro' => 'Club NovaEther Pro',
-            'estudiante' => 'Plan Estudiante',
-            default => 'Lector Free',
+        return match ($this->tipo) {
+            'estudiante' => 'Estudiante',
+            'docente' => 'Docente',
+            default => 'Lector Público',
         };
     }
 
@@ -106,13 +85,13 @@ class Reader extends Model
         $pts = (int) $this->puntos_karma;
 
         if ($pts >= 200) {
-            return '🏆 Coleccionista Oro';
+            return '🏆 Lector Destacado';
         }
         if ($pts >= 100) {
             return '⭐ Lector Constante';
         }
 
-        return '🌱 Miembro Inicial';
+        return '🌱 Lector Inicial';
     }
 
     public function registrarKarma(int $puntos, string $motivo, ?string $referenciaTipo = null, ?int $referenciaId = null): void
@@ -152,7 +131,6 @@ class Reader extends Model
                 });
             })
             ->when($filtros['tipo'] ?? null, fn (Builder $q, $tipo) => $q->where('tipo', $tipo))
-            ->when($filtros['plan_suscripcion'] ?? null, fn (Builder $q, $plan) => $q->where('plan_suscripcion', $plan))
             ->when($filtros['estado'] ?? null, fn (Builder $q, $estado) => $q->where('estado', $estado));
     }
 }

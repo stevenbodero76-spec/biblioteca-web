@@ -68,7 +68,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => 'Monkey D. Luffy zarpa al Grand Line en busca del legendario tesoro One Piece. El manga más vendido de la historia en edición física y digital de alta definición.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9781569319017-L.jpg',
-                'archivo_pdf' => 'https://mangaplus.shueisha.co.jp/titles/200016',
+                'archivo_pdf' => 'https://archive.org/embed/one-piece-volume-1',
                 'ubicacion_estante' => 'Vault Manga M-01 · Streaming HD',
                 'stock_total' => 6,
                 'stock_disponible' => 5,
@@ -83,7 +83,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => 'La obra maestra noir que redefinió el origen de Bruce Wayne como el Caballero Oscuro y la alianza con James Gordon en las calles de Gotham.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9781401207526-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9781401207526',
+                'archivo_pdf' => 'https://archive.org/embed/batman-year-one',
                 'ubicacion_estante' => 'Vault Cómics DC-01',
                 'stock_total' => 4,
                 'stock_disponible' => 4,
@@ -98,7 +98,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'digital',
                 'sinopsis' => '¿Quién vigila a los vigilantes? En un mundo al borde del colapso nuclear, una conspiración contra antiguos superhéroes cambia la historia del cómic para siempre.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9781401245252-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9781401245252',
+                'archivo_pdf' => 'https://archive.org/embed/watchmen0000moor',
                 'ubicacion_estante' => 'NovaEther Cloud Comic',
                 'stock_total' => 5,
                 'stock_disponible' => 5,
@@ -113,7 +113,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => 'El inicio de la leyenda ninja de Naruto Uzumaki en la Aldea Oculta de la Hoja y su camino indomable para convertirse en Hokage.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9781569319000-L.jpg',
-                'archivo_pdf' => 'https://mangaplus.shueisha.co.jp/',
+                'archivo_pdf' => 'https://archive.org/embed/naruto-vol-1',
                 'ubicacion_estante' => 'Vault Manga M-02',
                 'stock_total' => 4,
                 'stock_disponible' => 4,
@@ -128,7 +128,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => 'La humanidad sobrevive tras enormes murallas hasta que la aparición del Titán Colosal desata una batalla épica por la libertad.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9781612620244-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9781612620244',
+                'archivo_pdf' => 'https://archive.org/embed/attack-on-titan-vol-1',
                 'ubicacion_estante' => 'Vault Manga M-03',
                 'stock_total' => 1,
                 'stock_disponible' => 0,
@@ -145,7 +145,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => 'La saga inmortal de la familia Buendía en el mítico pueblo de Macondo. Una joya indispensable de la literatura mundial.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9788497592208-L.jpg',
-                'archivo_pdf' => 'https://www.cervantesvirtual.com/',
+                'archivo_pdf' => 'https://archive.org/embed/cienaosdesoled00garc',
                 'ubicacion_estante' => 'Salón Dorado A-01',
                 'stock_total' => 5,
                 'stock_disponible' => 4,
@@ -157,10 +157,10 @@ class DatabaseSeeder extends Seeder
                 'autor' => 'Mario Vargas Llosa',
                 'editorial' => 'Alfaguara',
                 'anio_publicacion' => 1963,
-                'formato' => 'fisico',
+                'formato' => 'ambos',
                 'sinopsis' => 'La novela ganadora del Premio Biblioteca Breve que catapultó el boom latinoamericano con una narrativa feroz e inolvidable.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9788420412146-L.jpg',
-                'archivo_pdf' => null,
+                'archivo_pdf' => 'https://archive.org/embed/laciudadylosperr0000varg',
                 'ubicacion_estante' => 'Salón Dorado A-02',
                 'stock_total' => 1,
                 'stock_disponible' => 0,
@@ -177,7 +177,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => 'En el desértico planeta Arrakis, Paul Atreides lidera una rebelión interestelar por el recurso más valioso del universo: la especia melange.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9780441172719-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9780441172719',
+                'archivo_pdf' => 'https://archive.org/embed/dune0000herb',
                 'ubicacion_estante' => 'Sector Sci-Fi B-01',
                 'stock_total' => 4,
                 'stock_disponible' => 3,
@@ -192,7 +192,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => 'La distopía más influyente del siglo XX: vigilancia total, manipulación de la verdad y la rebelión de Winston Smith contra el Gran Hermano.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9780451524935-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9780451524935',
+                'archivo_pdf' => 'https://archive.org/embed/1984-george-orwell',
                 'ubicacion_estante' => 'Sector Sci-Fi B-04',
                 'stock_total' => 5,
                 'stock_disponible' => 5,
@@ -209,7 +209,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'digital',
                 'sinopsis' => 'El manual imprescindible para ingenieros de software y arquitectos digitales que buscan excelencia técnica en cada línea de código.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9780132350884-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9780132350884',
+                'archivo_pdf' => 'https://archive.org/embed/clean-code_202105',
                 'ubicacion_estante' => 'NovaEther Tech Cloud',
                 'stock_total' => 6,
                 'stock_disponible' => 5,
@@ -224,7 +224,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => 'Los 23 patrones de diseño esenciales que sustentan los frameworks y sistemas empresariales más potentes del mundo.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9780201633610-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9780201633610',
+                'archivo_pdf' => 'https://archive.org/embed/DesignPatternsElementsOfReusableObjectOrientedSoftware',
                 'ubicacion_estante' => 'Sector Tech T-02',
                 'stock_total' => 4,
                 'stock_disponible' => 4,
@@ -241,7 +241,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => '«Feliz 53 cumpleaños, doctor. Bienvenido al primer día de su muerte». Un juego de ajedrez psicológico que no podrás soltar.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9780345450661-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9780345450661',
+                'archivo_pdf' => 'https://archive.org/embed/el-psicoanalista-john-katzenbach',
                 'ubicacion_estante' => 'Sector Noir C-02',
                 'stock_total' => 3,
                 'stock_disponible' => 3,
@@ -258,7 +258,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => 'El bestseller global sobre libertad financiera, creación de activos, inversión inteligente y mentalidad emprendedora.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9781612680194-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9781612680194',
+                'archivo_pdf' => 'https://archive.org/embed/padre-rico-padre-pobre-robert-kiyosaki',
                 'ubicacion_estante' => 'Business Hub E-01',
                 'stock_total' => 5,
                 'stock_disponible' => 5,
@@ -275,7 +275,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => 'El método definitivo respaldado por la neurociencia para construir hábitos extraordinarios y alcanzar el máximo potencial.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9780735211292-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9780735211292',
+                'archivo_pdf' => 'https://archive.org/embed/atomic-habits-james-clear',
                 'ubicacion_estante' => 'Mindset Lounge F-03',
                 'stock_total' => 4,
                 'stock_disponible' => 4,
@@ -292,7 +292,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => 'Cómo nuestra especie logró dominar el planeta, crear imperios, dinero, ciencia e inteligencia artificial.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9780062316097-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9780062316097',
+                'archivo_pdf' => 'https://archive.org/embed/sapiens-de-animales-a-dioses-yuval-noah-harari',
                 'ubicacion_estante' => 'Galería Historia D-01',
                 'stock_total' => 4,
                 'stock_disponible' => 4,
@@ -309,7 +309,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => '«Lo esencial es invisible a los ojos». Una obra atemporal con sus acuarelas originales restauradas.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9780156012195-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9780156012195',
+                'archivo_pdf' => 'https://archive.org/embed/elprincipito00sain_0',
                 'ubicacion_estante' => 'Zona Aventura G-01',
                 'stock_total' => 6,
                 'stock_disponible' => 6,
@@ -323,10 +323,10 @@ class DatabaseSeeder extends Seeder
                 'autor' => 'E. H. Gombrich',
                 'editorial' => 'Phaidon Press',
                 'anio_publicacion' => 1950,
-                'formato' => 'fisico',
+                'formato' => 'ambos',
                 'sinopsis' => 'El libro de arte y estética visual más célebre del mundo en formato de lujo.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9780714832470-L.jpg',
-                'archivo_pdf' => null,
+                'archivo_pdf' => 'https://archive.org/embed/the-story-of-art-by-e.-h.-gombrich',
                 'ubicacion_estante' => 'Galería Visual H-02',
                 'stock_total' => 2,
                 'stock_disponible' => 2,
@@ -343,7 +343,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'digital',
                 'sinopsis' => 'El bestseller mundial para dominar el inglés profesional e internacional de forma autodidacta.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9781108457651-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9781108457651',
+                'archivo_pdf' => 'https://archive.org/embed/english-grammar-in-use-5th-edition',
                 'ubicacion_estante' => 'NovaEther Global Cloud',
                 'stock_total' => 8,
                 'stock_disponible' => 8,
@@ -360,7 +360,7 @@ class DatabaseSeeder extends Seeder
                 'formato' => 'ambos',
                 'sinopsis' => 'El retrato definitivo sobre innovación, diseño obsesivo y liderazgo tecnológico del fundador de Apple y Pixar.',
                 'portada_url' => 'https://covers.openlibrary.org/b/isbn/9781451648539-L.jpg',
-                'archivo_pdf' => 'https://openlibrary.org/isbn/9781451648539',
+                'archivo_pdf' => 'https://archive.org/embed/steve-jobs-walter-isaacson',
                 'ubicacion_estante' => 'Salón Pioneros I-01',
                 'stock_total' => 3,
                 'stock_disponible' => 3,
@@ -368,24 +368,21 @@ class DatabaseSeeder extends Seeder
         ];
 
         $librosPorIsbn = [];
-        foreach ($librosData as $idx => $libro) {
-            $esManga = $libro['category_id'] === $categorias['Cómics, Manga y Novela Gráfica']->id;
-            $esTech = $libro['category_id'] === $categorias['Tecnología, IA y Desarrollo (Tech)']->id;
-
-            $libro['precio_alquiler'] = $esManga ? 6.50 : ($esTech ? 12.00 : 8.50 + ($idx % 3));
-            $libro['precio_venta'] = $esManga ? 39.90 : ($esTech ? 115.00 : 54.90 + (($idx % 4) * 5));
+        foreach ($librosData as $libro) {
+            $libro['idioma'] = $libro['isbn'] === '978-1108457651' ? 'en' : 'es';
+            $libro['licencia'] = ($libro['anio_publicacion'] ?? 2000) <= 1955 ? 'dominio_publico' : 'acceso_abierto';
 
             $creado = Book::create($libro);
             $librosPorIsbn[$libro['isbn']] = $creado;
         }
 
-        // 4. Clientes / Miembros Suscriptores de la Plataforma Comercial
+        // 4. Lectores de la Biblioteca Pública Abierta (Estudiante, Docente, Lector Público)
         $lectoresData = [
-            ['user_id' => $cliente->id, 'dni_codigo' => '72849102', 'nombres' => 'Carlos Alberto', 'apellidos' => 'Mendoza Ríos', 'email' => 'cliente@novaether.com', 'telefono' => '987654321', 'tipo' => 'estudiante', 'plan_suscripcion' => 'pro', 'plan_vence_at' => now()->addMonths(2)->toDateString(), 'estado' => 'activo', 'puntos_karma' => 125],
-            ['dni_codigo' => '74102938', 'nombres' => 'Lucía Fernanda', 'apellidos' => 'Quispe Salazar', 'email' => 'lucia.quispe@outlook.com', 'telefono' => '912345678', 'tipo' => 'docente', 'plan_suscripcion' => 'estudiante', 'plan_vence_at' => now()->addMonth()->toDateString(), 'estado' => 'activo', 'puntos_karma' => 210],
-            ['dni_codigo' => '41928374', 'nombres' => 'Roberto', 'apellidos' => 'Paredes Vargas', 'email' => 'rparedes@novaether.club', 'telefono' => '998877665', 'tipo' => 'docente', 'plan_suscripcion' => 'free', 'estado' => 'activo', 'puntos_karma' => 90],
-            ['dni_codigo' => '76543210', 'nombres' => 'Andrea Valeria', 'apellidos' => 'Rojas Castillo', 'email' => 'andrea.rojas@gmail.com', 'telefono' => '955443322', 'tipo' => 'publico', 'plan_suscripcion' => 'pro', 'plan_vence_at' => now()->addMonth()->toDateString(), 'estado' => 'activo', 'puntos_karma' => 75],
-            ['dni_codigo' => '70918273', 'nombres' => 'Diego Alejandro', 'apellidos' => 'Torres Huamán', 'email' => 'diego.torres@hotmail.com', 'telefono' => '944332211', 'tipo' => 'publico', 'plan_suscripcion' => 'free', 'estado' => 'suspendido', 'puntos_karma' => 10],
+            ['user_id' => $cliente->id, 'dni_codigo' => '72849102', 'nombres' => 'Carlos Alberto', 'apellidos' => 'Mendoza Ríos', 'email' => 'cliente@novaether.com', 'telefono' => '987654321', 'tipo' => 'estudiante', 'estado' => 'activo', 'puntos_karma' => 125],
+            ['dni_codigo' => '74102938', 'nombres' => 'Lucía Fernanda', 'apellidos' => 'Quispe Salazar', 'email' => 'lucia.quispe@outlook.com', 'telefono' => '912345678', 'tipo' => 'docente', 'estado' => 'activo', 'puntos_karma' => 210],
+            ['dni_codigo' => '41928374', 'nombres' => 'Roberto', 'apellidos' => 'Paredes Vargas', 'email' => 'rparedes@novaether.club', 'telefono' => '998877665', 'tipo' => 'docente', 'estado' => 'activo', 'puntos_karma' => 90],
+            ['dni_codigo' => '76543210', 'nombres' => 'Andrea Valeria', 'apellidos' => 'Rojas Castillo', 'email' => 'andrea.rojas@gmail.com', 'telefono' => '955443322', 'tipo' => 'publico', 'estado' => 'activo', 'puntos_karma' => 75],
+            ['dni_codigo' => '70918273', 'nombres' => 'Diego Alejandro', 'apellidos' => 'Torres Huamán', 'email' => 'diego.torres@hotmail.com', 'telefono' => '944332211', 'tipo' => 'publico', 'estado' => 'suspendido', 'puntos_karma' => 10],
         ];
 
         $lectores = [];
@@ -393,7 +390,7 @@ class DatabaseSeeder extends Seeder
             $lectores[] = Reader::create($lec);
         }
 
-        // 5. Historial de Préstamos y Reservas Comerciales
+        // 5. Historial de Préstamos Públicos Gratuitos
         Loan::create([
             'book_id' => $librosPorIsbn['978-1569319017']->id, // One Piece Vol. 1
             'reader_id' => $lectores[0]->id,
@@ -402,12 +399,11 @@ class DatabaseSeeder extends Seeder
             'fecha_devolucion_esperada' => now()->addDays(4)->toDateString(),
             'fecha_devolucion_real' => null,
             'estado' => 'prestado',
-            'metodo_pago' => 'yape_plin',
-            'monto' => 6.50,
+            'metodo_pago' => 'membresia',
+            'monto' => 0.00,
             'estado_pago' => 'pagado',
-            'codigo_operacion' => 'YP-492018',
             'fecha_pago' => now()->subDays(3),
-            'observaciones' => 'Entrega de edición coleccionista sellada + acceso a lectura digital HD.',
+            'observaciones' => 'Préstamo público gratuito + acceso a lectura digital.',
         ]);
 
         Loan::create([
@@ -433,11 +429,11 @@ class DatabaseSeeder extends Seeder
             'fecha_devolucion_esperada' => now()->addDays(2)->toDateString(),
             'fecha_devolucion_real' => null,
             'estado' => 'prestado',
-            'metodo_pago' => 'mostrador',
-            'monto' => 6.50,
-            'estado_pago' => 'pendiente',
-            'expira_pago_at' => now()->addHours(18),
-            'observaciones' => 'Reserva exclusiva de tomo manga pendiente de cobro en tienda.',
+            'metodo_pago' => 'membresia',
+            'monto' => 0.00,
+            'estado_pago' => 'pagado',
+            'fecha_pago' => now()->subDays(5),
+            'observaciones' => 'Préstamo público gratuito de tomo manga.',
         ]);
 
         Loan::create([
@@ -452,7 +448,7 @@ class DatabaseSeeder extends Seeder
             'monto' => 0.00,
             'estado_pago' => 'pagado',
             'fecha_pago' => now()->subDays(1),
-            'observaciones' => 'Licencia Cloud activada para cliente.',
+            'observaciones' => 'Préstamo gratuito activado para lector.',
         ]);
 
         Loan::create([

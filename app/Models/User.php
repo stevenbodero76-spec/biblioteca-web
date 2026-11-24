@@ -55,11 +55,6 @@ class User extends Authenticatable
         return $this->hasMany(Loan::class);
     }
 
-    public function orders(): HasMany
-    {
-        return $this->hasMany(Order::class);
-    }
-
     public function apiTokens(): HasMany
     {
         return $this->hasMany(ApiToken::class);

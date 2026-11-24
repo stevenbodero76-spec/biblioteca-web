@@ -4,11 +4,9 @@ namespace App\Providers;
 
 use App\Models\Category;
 use App\Models\Loan;
-use App\Models\Order;
 use App\Policies\LoanPolicy;
-use App\Policies\OrderPolicy;
-use App\Services\CartService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -23,7 +21,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Loan::class, LoanPolicy::class);
-        Gate::policy(Order::class, OrderPolicy::class);
 
         View::composer('layouts.app', function ($view) {
             $notificacionesEspera = collect();
@@ -37,10 +34,16 @@ class AppServiceProvider extends ServiceProvider
                     ->get();
             }
 
-            $navCategories = Category::orderBy('id')->get();
-            $cartCount = app(CartService::class)->count();
+            $navCategoriesRaw = Cache::remember(
+                'nav_categories_v2',
+                300,
+                fn () => Category::orderBy('id')->get(['id', 'nombre', 'icono'])->toArray()
+            );
+            $navCategories = is_array($navCategoriesRaw)
+                ? Category::hydrate($navCategoriesRaw)
+                : Category::orderBy('id')->get();
 
-            $view->with(compact('notificacionesEspera', 'navCategories', 'cartCount'));
+            $view->with(compact('notificacionesEspera', 'navCategories'));
         });
     }
 }

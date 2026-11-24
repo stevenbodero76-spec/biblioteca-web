@@ -7,7 +7,6 @@ use App\Models\Book;
 use App\Models\Category;
 use App\Models\Complaint;
 use App\Models\Loan;
-use App\Models\Order;
 use App\Models\Reader;
 use App\Models\Review;
 use App\Models\Waitlist;
@@ -17,32 +16,8 @@ class DashboardController extends Controller
 {
     public function index(SyncOverdueLoansAction $syncOverdueLoans): View
     {
-        // Sincroniza vencimientos y libera stock de reservas/órdenes impagas expiradas
+        // Sincroniza vencimientos de préstamos activos
         $syncOverdueLoans->execute();
-
-        $ingresosLoansMes = (float) Loan::where('estado_pago', 'pagado')
-            ->whereDoesntHave('orderItem')
-            ->whereMonth('fecha_pago', now()->month)
-            ->whereYear('fecha_pago', now()->year)
-            ->sum('monto');
-
-        $ingresosOrdersMes = (float) Order::where('estado_pago', 'pagado')
-            ->whereMonth('fecha_pago', now()->month)
-            ->whereYear('fecha_pago', now()->year)
-            ->sum('total');
-
-        $ingresosHoyLoans = (float) Loan::where('estado_pago', 'pagado')
-            ->whereDoesntHave('orderItem')
-            ->whereDate('fecha_pago', today())
-            ->sum('monto');
-        $ingresosHoyOrders = (float) Order::where('estado_pago', 'pagado')
-            ->whereDate('fecha_pago', today())
-            ->sum('total');
-
-        $montoPendienteLoans = (float) Loan::where('estado_pago', 'pendiente')
-            ->whereDoesntHave('orderItem')
-            ->sum('monto');
-        $montoPendienteOrders = (float) Order::where('estado_pago', 'pendiente')->sum('total');
 
         $resumen = [
             'total_titulos' => Book::count(),
@@ -54,13 +29,8 @@ class DashboardController extends Controller
             'prestamos_vencidos' => Loan::where('estado', 'vencido')->where('estado_pago', '!=', 'anulado')->count(),
             'devoluciones_completadas' => Loan::where('estado', 'devuelto')->where('estado_pago', '!=', 'anulado')->count(),
             'en_lista_espera' => Waitlist::whereIn('estado', ['en_espera', 'notificado'])->count(),
-            'ingresos_mes' => round($ingresosLoansMes + $ingresosOrdersMes, 2),
-            'ingresos_hoy' => round($ingresosHoyLoans + $ingresosHoyOrders, 2),
-            'monto_por_validar' => round($montoPendienteLoans + $montoPendienteOrders, 2),
-            'pagos_pendientes_count' => Loan::where('estado_pago', 'pendiente')->count() + Order::where('estado_pago', 'pendiente')->count(),
             'reclamos_abiertos' => Complaint::where('estado', '!=', 'resuelto')->count(),
             'resenas_totales' => Review::count(),
-            'ordenes_mes' => Order::where('estado_pago', '!=', 'anulado')->whereMonth('created_at', now()->month)->count(),
         ];
 
         $categoriasResumen = Category::withCount('books')
@@ -73,18 +43,6 @@ class DashboardController extends Controller
             ->take(8)
             ->get();
 
-        $pagosPendientesLoans = Loan::with(['book', 'reader'])
-            ->where('estado_pago', 'pendiente')
-            ->latest()
-            ->take(5)
-            ->get();
-
-        $pagosPendientesOrders = Order::with(['user', 'reader'])
-            ->where('estado_pago', 'pendiente')
-            ->latest()
-            ->take(5)
-            ->get();
-
         $librosSinStock = Book::with('category')
             ->withCount(['waitlists as en_espera_count' => fn ($q) => $q->whereIn('estado', ['en_espera', 'notificado'])])
             ->where('stock_disponible', 0)
@@ -94,8 +52,6 @@ class DashboardController extends Controller
             'resumen',
             'categoriasResumen',
             'ultimosPrestamos',
-            'pagosPendientesLoans',
-            'pagosPendientesOrders',
             'librosSinStock'
         ));
     }

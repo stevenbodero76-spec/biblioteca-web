@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Book extends Model
 {
@@ -16,8 +17,8 @@ class Book extends Model
         'autor',
         'editorial',
         'anio_publicacion',
-        'formato',
         'idioma',
+        'formato',
         'licencia',
         'sinopsis',
         'portada_url',
@@ -25,17 +26,7 @@ class Book extends Model
         'ubicacion_estante',
         'stock_total',
         'stock_disponible',
-        'precio_alquiler',
-        'precio_venta',
     ];
-
-    protected function casts(): array
-    {
-        return [
-            'precio_alquiler' => 'decimal:2',
-            'precio_venta' => 'decimal:2',
-        ];
-    }
 
     public function category(): BelongsTo
     {
@@ -60,11 +51,6 @@ class Book extends Model
     public function favorites(): HasMany
     {
         return $this->hasMany(Favorite::class);
-    }
-
-    public function orderItems(): HasMany
-    {
-        return $this->hasMany(OrderItem::class);
     }
 
     public function estaDisponible(): bool
@@ -136,7 +122,22 @@ class Book extends Model
         }
 
         return str_starts_with($this->archivo_pdf, '/storage/')
+            || str_contains($this->archivo_pdf, 'archive.org/embed/')
+            || str_contains($this->archivo_pdf, 'archive.org/details/')
             || str_ends_with(strtolower(parse_url($this->archivo_pdf, PHP_URL_PATH) ?? ''), '.pdf');
+    }
+
+    public function getVisorEmbedUrlAttribute(): ?string
+    {
+        if (! $this->archivo_pdf) {
+            return null;
+        }
+
+        if (str_contains($this->archivo_pdf, 'archive.org/details/')) {
+            return str_replace('archive.org/details/', 'archive.org/embed/', $this->archivo_pdf);
+        }
+
+        return $this->archivo_pdf;
     }
 
     public function scopeFiltro(Builder $query, array $filtros): Builder
@@ -144,9 +145,16 @@ class Book extends Model
         return $query
             ->when(trim((string) ($filtros['buscar'] ?? '')), function (Builder $q, string $buscar) {
                 $q->where(function (Builder $sub) use ($buscar) {
-                    $sub->where('titulo', 'like', "%{$buscar}%")
-                        ->orWhere('autor', 'like', "%{$buscar}%")
-                        ->orWhere('isbn', 'like', "%{$buscar}%")
+                    if (in_array(DB::getDriverName(), ['mysql', 'mariadb'], true) && mb_strlen($buscar) >= 3) {
+                        $sub->whereFullText(['titulo', 'autor'], $buscar)
+                            ->orWhere('titulo', 'like', "%{$buscar}%")
+                            ->orWhere('autor', 'like', "%{$buscar}%");
+                    } else {
+                        $sub->where('titulo', 'like', "%{$buscar}%")
+                            ->orWhere('autor', 'like', "%{$buscar}%");
+                    }
+
+                    $sub->orWhere('isbn', 'like', "%{$buscar}%")
                         ->orWhere('editorial', 'like', "%{$buscar}%");
                 });
             })
