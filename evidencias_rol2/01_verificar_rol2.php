@@ -5,13 +5,13 @@
  * Uso: php evidencias_rol2/01_verificar_rol2.php
  */
 
-require __DIR__.'/../vendor/autoload.php';
-$app = require_once __DIR__.'/../bootstrap/app.php';
-$app->make(Kernel::class)->bootstrap();
-
 use App\Services\BookLinkInterconnectorService;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Route;
+
+require __DIR__.'/../vendor/autoload.php';
+$app = require_once __DIR__.'/../bootstrap/app.php';
+$app->make(Kernel::class)->bootstrap();
 
 echo "=================================================================\n";
 echo " VERIFICACIÓN AUTOMÁTICA DE EVIDENCIAS · ROL 2\n";

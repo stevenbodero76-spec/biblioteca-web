@@ -5,15 +5,15 @@
  * Uso: php evidencias_rol1/02_verificar_rol1.php
  */
 
-require __DIR__.'/../vendor/autoload.php';
-$app = require_once __DIR__.'/../bootstrap/app.php';
-$app->make(Kernel::class)->bootstrap();
-
 use App\Models\Book;
 use App\Models\Loan;
 use App\Models\Reader;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Schema;
+
+require __DIR__.'/../vendor/autoload.php';
+$app = require_once __DIR__.'/../bootstrap/app.php';
+$app->make(Kernel::class)->bootstrap();
 
 echo "=================================================================\n";
 echo " VERIFICACIÓN AUTOMÁTICA DE EVIDENCIAS · ROL 1 (BD Y MODELOS)\n";

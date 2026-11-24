@@ -489,7 +489,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             ->assertSee('js-quickview-btn')
             ->assertSee('nova-quickview-modal');
 
-        $ajaxCatalog = $this->getJson('/books?partial=1&orden=menor_precio&buscar=One');
+        $ajaxCatalog = $this->getJson('/books?partial=1&orden=mejor_valorados&buscar=One');
         $ajaxCatalog->assertStatus(200)
             ->assertJsonStructure(['html', 'total']);
         $this->assertGreaterThanOrEqual(1, $ajaxCatalog->json('total'));
