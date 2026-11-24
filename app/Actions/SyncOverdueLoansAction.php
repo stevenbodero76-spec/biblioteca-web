@@ -28,7 +28,7 @@ class SyncOverdueLoansAction
                     return;
                 }
 
-                $nota = trim(($fresh->observaciones ? $fresh->observaciones . ' | ' : '') . 'Reserva expirada automáticamente tras 24h.');
+                $nota = trim(($fresh->observaciones ? $fresh->observaciones.' | ' : '').'Reserva expirada automáticamente tras 24h.');
                 $fresh->update([
                     'estado' => 'devuelto',
                     'estado_pago' => 'anulado',

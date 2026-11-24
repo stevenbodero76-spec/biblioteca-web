@@ -37,7 +37,7 @@ class CreateLoanAction
 
             if ($reader->prestamosActivosCount() >= self::MAX_PRESTAMOS_ACTIVOS) {
                 throw ValidationException::withMessages([
-                    'reader_id' => "PRÉSTAMO RECHAZADO: «{$reader->nombre_completo}» ya alcanzó el límite de " . self::MAX_PRESTAMOS_ACTIVOS . ' préstamos activos simultáneos.',
+                    'reader_id' => "PRÉSTAMO RECHAZADO: «{$reader->nombre_completo}» ya alcanzó el límite de ".self::MAX_PRESTAMOS_ACTIVOS.' préstamos activos simultáneos.',
                 ]);
             }
 

@@ -549,7 +549,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         Complaint::create([
-            'codigo_reclamo' => 'LRC-' . date('Y') . '-DEMO01',
+            'codigo_reclamo' => 'LRC-'.date('Y').'-DEMO01',
             'nombre_completo' => 'Andrea Valeria Rojas Castillo',
             'dni_ce' => '76543210',
             'email' => 'andrea.rojas@gmail.com',

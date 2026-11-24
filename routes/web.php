@@ -18,6 +18,10 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/books', [BookController::class, 'index'])->name('books.index');
 });
 
+Route::get('/books/external-search', [BookController::class, 'externalSearch'])
+    ->middleware('throttle:30,1')
+    ->name('books.external-search');
+
 // Libro de Reclamaciones y Sugerencias / Reportes de Enlaces
 Route::get('/libro-de-reclamaciones', [ComplaintController::class, 'create'])->name('complaints.create');
 Route::post('/libro-de-reclamaciones', [ComplaintController::class, 'store'])

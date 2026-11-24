@@ -91,7 +91,7 @@ class ReaderController extends Controller
         $datos = $request->validated();
 
         DB::transaction(function () use ($datos, $reader) {
-            $nombreCompleto = trim($datos['nombres'] . ' ' . $datos['apellidos']);
+            $nombreCompleto = trim($datos['nombres'].' '.$datos['apellidos']);
 
             if ($reader->user) {
                 $userUpdates = [

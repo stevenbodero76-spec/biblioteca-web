@@ -5,19 +5,19 @@
  * Uso: php evidencias_rol2/01_verificar_rol2.php
  */
 
-require __DIR__ . '/../vendor/autoload.php';
-$app = require_once __DIR__ . '/../bootstrap/app.php';
-$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+require __DIR__.'/../vendor/autoload.php';
+$app = require_once __DIR__.'/../bootstrap/app.php';
+$app->make(Kernel::class)->bootstrap();
 
 use App\Services\BookLinkInterconnectorService;
-use App\Models\Book;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Route;
 
 echo "=================================================================\n";
 echo " VERIFICACIÓN AUTOMÁTICA DE EVIDENCIAS · ROL 2\n";
 echo "=================================================================\n\n";
 
-$service = new BookLinkInterconnectorService();
+$service = new BookLinkInterconnectorService;
 
 // 1. Verificación de Conversor Inteligente archive.org/details -> /embed
 $testDetailsUrl = 'https://archive.org/details/donquijote00cerv';
@@ -25,12 +25,12 @@ $embedConvertido = $service->convertirAEmbedUrl($testDetailsUrl);
 echo "[1] Visor Embebido Inteligente Multi-Fuente:\n";
 echo "    - URL Original: {$testDetailsUrl}\n";
 echo "    - URL Convertida a Embed: {$embedConvertido}\n";
-echo "    - ¿Conversión correcta?: " . ($embedConvertido === 'https://archive.org/embed/donquijote00cerv' ? "SI (OK)" : "NO") . "\n\n";
+echo '    - ¿Conversión correcta?: '.($embedConvertido === 'https://archive.org/embed/donquijote00cerv' ? 'SI (OK)' : 'NO')."\n\n";
 
 // 2. Verificación de ruta de Importación en 1 Clic
 $hasImportRoute = Route::has('books.importar-externo');
 echo "[2] Ruta de Importación al Catálogo en 1 Clic:\n";
-echo "    - Route 'books.importar-externo' registrada: " . ($hasImportRoute ? "SI (OK)" : "NO") . "\n\n";
+echo "    - Route 'books.importar-externo' registrada: ".($hasImportRoute ? 'SI (OK)' : 'NO')."\n\n";
 
 // 3. Verificación de limpieza en CreateLoanAction y BookController
 $createLoanCode = file_get_contents(__DIR__ . '/../app/Actions/CreateLoanAction.php');
@@ -52,7 +52,7 @@ echo "    - Conversión de URLs openlibrary.org hacia archive.org/embed/: " . ($
 // 4. Verificación de Método buscarEnRedesExternas
 $methodExists = method_exists($service, 'buscarEnRedesExternas');
 echo "[4] Buscador Externo en Tiempo Real (Open Library / Gutendex):\n";
-echo "    - Método buscarEnRedesExternas implementado: " . ($methodExists ? "SI (OK)" : "NO") . "\n";
+echo '    - Método buscarEnRedesExternas implementado: '.($methodExists ? 'SI (OK)' : 'NO')."\n";
 
 echo "\n=================================================================\n";
 echo " RESULTADO GLOBAL ROL 2: 100% COMPLETADO Y VERIFICADO\n";

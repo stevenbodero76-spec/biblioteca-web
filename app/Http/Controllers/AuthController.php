@@ -50,7 +50,7 @@ class AuthController extends Controller
 
             return redirect()
                 ->intended($destino)
-                ->with('success', '¡Bienvenido(a) a NOVAETHER™, ' . $user->name . '!');
+                ->with('success', '¡Bienvenido(a) a NOVAETHER™, '.$user->name.'!');
         }
 
         return back()
@@ -80,7 +80,7 @@ class AuthController extends Controller
 
         $user = DB::transaction(function () use ($datos) {
             $nuevoUsuario = User::create([
-                'name' => trim($datos['nombres'] . ' ' . $datos['apellidos']),
+                'name' => trim($datos['nombres'].' '.$datos['apellidos']),
                 'email' => $datos['email'],
                 'rol' => 'cliente',
                 'password' => Hash::make($datos['password']),

@@ -16,7 +16,7 @@ class Rol2ExternalBookSearchTest extends TestCase
 
     public function test_interconnector_converts_archive_org_details_to_embed_url(): void
     {
-        $service = new BookLinkInterconnectorService();
+        $service = new BookLinkInterconnectorService;
 
         $embed = $service->convertirAEmbedUrl('https://archive.org/details/donquijote00cerv');
         $this->assertSame('https://archive.org/embed/donquijote00cerv', $embed);
@@ -55,7 +55,7 @@ class Rol2ExternalBookSearchTest extends TestCase
             ], 200),
         ]);
 
-        $service = new BookLinkInterconnectorService();
+        $service = new BookLinkInterconnectorService;
         $resultados = $service->buscarEnRedesExternas('Don Quijote', 2);
 
         $this->assertNotEmpty($resultados);

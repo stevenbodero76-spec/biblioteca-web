@@ -67,7 +67,7 @@ class ApiAuthController extends Controller
 
         $user = DB::transaction(function () use ($datos) {
             $nuevo = User::create([
-                'name' => trim($datos['nombres'] . ' ' . $datos['apellidos']),
+                'name' => trim($datos['nombres'].' '.$datos['apellidos']),
                 'email' => $datos['email'],
                 'rol' => 'cliente',
                 'password' => Hash::make($datos['password']),

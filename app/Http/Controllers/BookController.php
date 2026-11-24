@@ -192,7 +192,7 @@ class BookController extends Controller
         if ($archivo !== '' && str_starts_with($archivo, '/storage/')) {
             $relativo = ltrim(substr($archivo, strlen('/storage/')), '/');
             if ($relativo !== '' && ! str_contains($relativo, '..') && Storage::disk('public')->exists($relativo)) {
-                $nombreDescarga = (Str::slug($book->titulo) ?: 'obra-' . $book->id) . '.pdf';
+                $nombreDescarga = (Str::slug($book->titulo) ?: 'obra-'.$book->id).'.pdf';
 
                 return Storage::disk('public')->download($relativo, $nombreDescarga);
             }
@@ -291,7 +291,7 @@ class BookController extends Controller
 
         $isbn = trim((string) ($datos['isbn'] ?? ''));
         if ($isbn === '' || Book::where('isbn', $isbn)->exists()) {
-            $isbn = 'EXT-' . strtoupper(Str::random(10));
+            $isbn = 'EXT-'.strtoupper(Str::random(10));
         }
 
         $libro = Book::create([
@@ -316,7 +316,7 @@ class BookController extends Controller
 
         return redirect()
             ->route('books.show', $libro)
-            ->with('success', '¡Obra «' . $libro->titulo . '» importada exitosamente al catálogo oficial de NOVAETHER™!');
+            ->with('success', '¡Obra «'.$libro->titulo.'» importada exitosamente al catálogo oficial de NOVAETHER™!');
     }
 
     public function buscarPorIsbn(string $isbn, BookLinkInterconnectorService $interconnector): JsonResponse
@@ -396,6 +396,23 @@ class BookController extends Controller
         }
     }
 
+    public function externalSearch(Request $request, BookLinkInterconnectorService $interconnector): JsonResponse
+    {
+        $validated = $request->validate([
+            'q' => ['required', 'string', 'min:2', 'max:160'],
+        ]);
+        $query = trim($validated['q']);
+        $results = $interconnector->buscarEnRedesExternas($query, 10);
+
+        return response()->json([
+            'data' => $results,
+            'meta' => [
+                'query' => $query,
+                'count' => count($results),
+            ],
+        ]);
+    }
+
     private function prepararDatosLibro(
         BookRequest $request,
         ?Book $book = null,
@@ -405,7 +422,7 @@ class BookController extends Controller
 
         if ($request->hasFile('portada_file')) {
             $path = $request->file('portada_file')->store('covers', 'public');
-            $datos['portada_url'] = '/storage/' . ltrim($path, '/');
+            $datos['portada_url'] = '/storage/'.ltrim($path, '/');
             if ($book) {
                 $this->eliminarArchivoPublicoSiLocal($book->portada_url);
             }
@@ -415,7 +432,7 @@ class BookController extends Controller
 
         if ($request->hasFile('pdf_file')) {
             $path = $request->file('pdf_file')->store('pdfs', 'public');
-            $datos['archivo_pdf'] = '/storage/' . ltrim($path, '/');
+            $datos['archivo_pdf'] = '/storage/'.ltrim($path, '/');
             if ($book) {
                 $this->eliminarArchivoPublicoSiLocal($book->archivo_pdf);
             }

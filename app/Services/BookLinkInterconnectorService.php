@@ -59,7 +59,7 @@ class BookLinkInterconnectorService
     public function resolverEnlacesLectura(Book $book, bool $resolverOpenLibrary = true): array
     {
         $cleanIsbn = preg_replace('/[^0-9Xx]/', '', (string) $book->isbn);
-        $queryTituloAutor = urlencode(trim($book->titulo . ' ' . $book->autor));
+        $queryTituloAutor = urlencode(trim($book->titulo.' '.$book->autor));
         $queryTitulo = urlencode(trim($book->titulo));
 
         $openLibraryUrl = $cleanIsbn !== ''
@@ -170,11 +170,11 @@ class BookLinkInterconnectorService
                 ],
                 [
                     'nombre' => 'Internet Archive',
-                    'url' => 'https://archive.org/details/texts?tab=collection&query=' . urlencode($titulo ?: $cleanIsbn),
+                    'url' => 'https://archive.org/details/texts?tab=collection&query='.urlencode($titulo ?: $cleanIsbn),
                 ],
                 [
                     'nombre' => 'Project Gutenberg',
-                    'url' => 'https://www.gutenberg.org/ebooks/search/?query=' . urlencode($titulo ?: $cleanIsbn),
+                    'url' => 'https://www.gutenberg.org/ebooks/search/?query='.urlencode($titulo ?: $cleanIsbn),
                 ],
             ],
         ];
@@ -320,7 +320,7 @@ class BookLinkInterconnectorService
             return "https://openlibrary.org/isbn/{$cleanIsbn}";
         }
 
-        return 'https://openlibrary.org/search?q=' . urlencode($titulo);
+        return 'https://openlibrary.org/search?q='.urlencode($titulo);
     }
 
     /**
@@ -389,7 +389,7 @@ class BookLinkInterconnectorService
             return [];
         }
 
-        $cacheKey = 'ext_search_' . md5(mb_strtolower($termino)) . '_' . $limitePorFuente;
+        $cacheKey = 'ext_search_'.md5(mb_strtolower($termino)).'_'.$limitePorFuente;
 
         return Cache::remember($cacheKey, 3600, function () use ($termino, $limitePorFuente) {
             $resultados = [];
@@ -417,7 +417,7 @@ class BookLinkInterconnectorService
 
                         $archivoPdf = $iaId
                             ? "https://archive.org/embed/{$iaId}"
-                            : ($isbn ? "https://openlibrary.org/isbn/{$isbn}" : 'https://openlibrary.org' . ($doc['key'] ?? ''));
+                            : ($isbn ? "https://openlibrary.org/isbn/{$isbn}" : 'https://openlibrary.org'.($doc['key'] ?? ''));
 
                         $autores = ! empty($doc['author_name']) ? implode(', ', (array) $doc['author_name']) : 'Autor Desconocido';
                         $editoriales = ! empty($doc['publisher'])
@@ -467,7 +467,7 @@ class BookLinkInterconnectorService
                             'autor' => $autores,
                             'editorial' => 'Project Gutenberg (Dominio Público)',
                             'anio_publicacion' => null,
-                            'isbn' => 'PG-' . $item['id'],
+                            'isbn' => 'PG-'.$item['id'],
                             'portada_url' => $coverUrl,
                             'archivo_pdf' => $urlLectura,
                             'fuente' => 'Project Gutenberg',

@@ -64,7 +64,7 @@ class ApiCustomerController extends Controller
 
         DB::transaction(function () use ($user, $reader, $datos) {
             $user->update([
-                'name' => trim($datos['nombres'] . ' ' . $datos['apellidos']),
+                'name' => trim($datos['nombres'].' '.$datos['apellidos']),
                 'email' => $datos['email'],
             ]);
 
