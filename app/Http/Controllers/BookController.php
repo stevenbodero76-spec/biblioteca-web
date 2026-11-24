@@ -6,6 +6,7 @@ use App\Http\Requests\BookRequest;
 use App\Models\Book;
 use App\Models\Category;
 use App\Services\BookLinkInterconnectorService;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -292,6 +293,117 @@ class BookController extends Controller
         }
     }
 
+    public function externalSearch(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'q' => ['required', 'string', 'min:2', 'max:160'],
+        ]);
+        $query = trim($validated['q']);
+        $results = [];
+        $sources = [
+            'open_library' => 'unavailable',
+            'gutenberg' => 'unavailable',
+        ];
+
+        try {
+            $response = Http::acceptJson()
+                ->connectTimeout(3)
+                ->timeout(6)
+                ->get('https://openlibrary.org/search.json', [
+                    'q' => $query,
+                    'limit' => 10,
+                ]);
+
+            if ($response->successful()) {
+                $sources['open_library'] = 'ok';
+                $documents = $response->json('docs', []);
+
+                if (is_array($documents)) {
+                    foreach ($documents as $document) {
+                        if (! is_array($document) || empty($document['title'])) {
+                            continue;
+                        }
+
+                        $archiveId = data_get($document, 'ia.0');
+                        $workKey = $document['key'] ?? null;
+                        $readUrl = is_string($archiveId)
+                            ? "https://archive.org/details/{$archiveId}"
+                            : (is_string($workKey) ? "https://openlibrary.org{$workKey}" : null);
+
+                        $results[] = [
+                            'title' => $document['title'],
+                            'authors' => $document['author_name'] ?? [],
+                            'year' => $document['first_publish_year'] ?? null,
+                            'cover_url' => ! empty($document['cover_i'])
+                                ? 'https://covers.openlibrary.org/b/id/'.$document['cover_i'].'-M.jpg'
+                                : null,
+                            'source' => 'Open Library',
+                            'read_url' => $readUrl,
+                        ];
+                    }
+                }
+            }
+        } catch (ConnectionException) {
+            $sources['open_library'] = 'unavailable';
+        }
+
+        try {
+            $response = Http::acceptJson()
+                ->connectTimeout(3)
+                ->timeout(6)
+                ->get('https://gutendex.com/books/', [
+                    'search' => $query,
+                ]);
+
+            if ($response->successful()) {
+                $sources['gutenberg'] = 'ok';
+                $books = $response->json('results', []);
+
+                if (is_array($books)) {
+                    foreach (array_slice($books, 0, 10) as $book) {
+                        if (! is_array($book) || empty($book['title'])) {
+                            continue;
+                        }
+
+                        $bookId = $book['id'] ?? null;
+                        $formats = $book['formats'] ?? [];
+                        $readUrl = is_array($formats)
+                            ? (($formats['text/html'] ?? null)
+                                ?? $formats['application/epub+zip']
+                                ?? (is_numeric($bookId) ? "https://www.gutenberg.org/ebooks/{$bookId}" : null))
+                            : null;
+
+                        $results[] = [
+                            'title' => $book['title'],
+                            'authors' => collect($book['authors'] ?? [])->pluck('name')->all(),
+                            'year' => null,
+                            'cover_url' => is_array($formats) ? ($formats['image/jpeg'] ?? null) : null,
+                            'source' => 'Project Gutenberg',
+                            'read_url' => $readUrl,
+                        ];
+                    }
+                }
+            }
+        } catch (ConnectionException) {
+            $sources['gutenberg'] = 'unavailable';
+        }
+
+        if (! in_array('ok', $sources, true)) {
+            return response()->json([
+                'message' => 'No se pudo consultar Open Library ni Project Gutenberg en este momento.',
+                'sources' => $sources,
+            ], 502);
+        }
+
+        return response()->json([
+            'data' => $results,
+            'meta' => [
+                'query' => $query,
+                'sources' => $sources,
+            ],
+        ]);
+    }
+
     private function prepararDatosLibro(
         BookRequest $request,
         ?Book $book = null,
@@ -301,7 +413,7 @@ class BookController extends Controller
 
         if ($request->hasFile('portada_file')) {
             $path = $request->file('portada_file')->store('covers', 'public');
-            $datos['portada_url'] = '/storage/' . ltrim($path, '/');
+            $datos['portada_url'] = '/storage/'.ltrim($path, '/');
             if ($book) {
                 $this->eliminarArchivoPublicoSiLocal($book->portada_url);
             }
@@ -311,7 +423,7 @@ class BookController extends Controller
 
         if ($request->hasFile('pdf_file')) {
             $path = $request->file('pdf_file')->store('pdfs', 'public');
-            $datos['archivo_pdf'] = '/storage/' . ltrim($path, '/');
+            $datos['archivo_pdf'] = '/storage/'.ltrim($path, '/');
             if ($book) {
                 $this->eliminarArchivoPublicoSiLocal($book->archivo_pdf);
             }

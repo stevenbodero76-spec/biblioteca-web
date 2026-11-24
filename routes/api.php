@@ -3,7 +3,12 @@
 use App\Http\Controllers\Api\V1\ApiAuthController;
 use App\Http\Controllers\Api\V1\ApiCatalogController;
 use App\Http\Controllers\Api\V1\ApiCustomerController;
+use App\Http\Controllers\BookController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/books/external-search', [BookController::class, 'externalSearch'])
+    ->middleware('throttle:30,1')
+    ->name('api.books.external-search');
 
 Route::prefix('v1')->group(function () {
     // Endpoints públicos de catálogo y autenticación móvil

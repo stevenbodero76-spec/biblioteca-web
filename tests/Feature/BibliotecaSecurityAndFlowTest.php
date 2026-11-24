@@ -4,12 +4,20 @@ namespace Tests\Feature;
 
 use App\Models\Book;
 use App\Models\Category;
+use App\Models\Complaint;
 use App\Models\Loan;
+use App\Models\Order;
 use App\Models\Reader;
+use App\Models\Review;
 use App\Models\User;
 use App\Models\Waitlist;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class BibliotecaSecurityAndFlowTest extends TestCase
@@ -74,10 +82,52 @@ class BibliotecaSecurityAndFlowTest extends TestCase
 
         $this->get("/books/{$book->id}")
             ->assertStatus(200)
-            ->assertSee('Leer Obra Completa Ahora')
+            ->assertSee('Lector NOVAETHER™')
             ->assertSee($readingUrl)
             ->assertSee($authorRelatedBook->titulo)
             ->assertSee($topicRelatedBook->titulo);
+    }
+
+    public function test_external_search_returns_open_library_and_gutenberg_books_on_web_and_api_routes(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'openlibrary.org/search.json*' => Http::response([
+                'docs' => [[
+                    'key' => '/works/OL123W',
+                    'title' => 'Obra de Open Library',
+                    'author_name' => ['Autora Abierta'],
+                    'first_publish_year' => 1925,
+                    'ia' => ['open-library-reader'],
+                ]],
+            ]),
+            'gutendex.com/books/*' => Http::response([
+                'results' => [[
+                    'id' => 42,
+                    'title' => 'Obra de Gutenberg',
+                    'authors' => [['name' => 'Autor de Dominio Público']],
+                    'formats' => [
+                        'text/html' => 'https://www.gutenberg.org/files/42/42-h/42-h.htm',
+                        'image/jpeg' => 'https://www.gutenberg.org/cache/epub/42/pg42.cover.medium.jpg',
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $this->getJson(route('books.external-search', ['q' => 'lectura mundial']))
+            ->assertOk()
+            ->assertJsonPath('meta.query', 'lectura mundial')
+            ->assertJsonPath('meta.sources.open_library', 'ok')
+            ->assertJsonPath('meta.sources.gutenberg', 'ok')
+            ->assertJsonPath('data.0.title', 'Obra de Open Library')
+            ->assertJsonPath('data.0.read_url', 'https://archive.org/details/open-library-reader')
+            ->assertJsonPath('data.1.title', 'Obra de Gutenberg')
+            ->assertJsonPath('data.1.read_url', 'https://www.gutenberg.org/files/42/42-h/42-h.htm');
+
+        $this->getJson('/api/books/external-search?q=lectura%20mundial')
+            ->assertOk()
+            ->assertJsonPath('data.0.title', 'Obra de Open Library')
+            ->assertJsonPath('data.1.title', 'Obra de Gutenberg');
     }
 
     public function test_register_creates_linked_user_and_reader_and_logs_in(): void
@@ -100,6 +150,47 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $this->assertSame('cliente', $user->rol);
         $this->assertNotNull($user->reader);
         $this->assertSame('79998888', $user->reader->dni_codigo);
+    }
+
+    public function test_public_registration_creates_reader_without_dni_code(): void
+    {
+        $this->post('/register', [
+            'nombres' => 'Lucía',
+            'apellidos' => 'Paredes',
+            'email' => 'lucia.publica@example.com',
+            'password' => 'secret123',
+            'password_confirmation' => 'secret123',
+        ])->assertRedirect(route('home'));
+
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('readers', [
+            'email' => 'lucia.publica@example.com',
+            'dni_codigo' => null,
+        ]);
+    }
+
+    public function test_loan_and_reader_forms_render_without_plan_or_payment_fields(): void
+    {
+        $admin = User::where('email', 'admin@novaether.com')->firstOrFail();
+        $reader = Reader::where('email', 'cliente@novaether.com')->firstOrFail();
+
+        $this->actingAs($admin)->get('/loans/create')
+            ->assertOk()
+            ->assertDontSee('name="metodo_pago"', false)
+            ->assertDontSee('name="codigo_operacion"', false)
+            ->assertDontSee('name="pago_verificado_admin"', false);
+
+        $this->actingAs($admin)->get('/readers')
+            ->assertOk()
+            ->assertDontSee('name="plan_suscripcion"', false);
+
+        $this->actingAs($admin)->get('/readers/create')
+            ->assertOk()
+            ->assertDontSee('name="plan_suscripcion"', false);
+
+        $this->actingAs($admin)->get("/readers/{$reader->id}/edit")
+            ->assertOk()
+            ->assertDontSee('name="plan_suscripcion"', false);
     }
 
     public function test_client_cannot_access_dashboard_or_readers_or_return_loans(): void
@@ -153,7 +244,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
 
         // Aunque busque por el DNI de otro lector o título ajeno, su préstamo no debe aparecer
         $this->actingAs($cliente)
-            ->get('/loans?buscar=' . urlencode($otroLoan->reader->dni_codigo))
+            ->get('/loans?buscar='.urlencode($otroLoan->reader->dni_codigo))
             ->assertStatus(200)
             ->assertDontSee($otroLoan->reader->nombre_completo)
             ->assertDontSee($otroLoan->book->titulo);
@@ -383,7 +474,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             'name' => $suspendidoReader->nombre_completo,
             'email' => $suspendidoReader->email,
             'rol' => 'cliente',
-            'password' => \Illuminate\Support\Facades\Hash::make('secret123'),
+            'password' => Hash::make('secret123'),
         ]);
         $suspendidoReader->update(['user_id' => $user->id]);
 
@@ -509,7 +600,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             'usar_karma' => '1',
         ]);
 
-        $order = \App\Models\Order::latest('id')->firstOrFail();
+        $order = Order::latest('id')->firstOrFail();
         $response->assertRedirect(route('orders.show', $order));
 
         $this->assertSame('pagado', $order->estado_pago);
@@ -531,7 +622,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
     public function test_admin_post_sale_consoles_complaints_waitlists_and_review_moderation(): void
     {
         $admin = User::where('email', 'admin@novaether.com')->firstOrFail();
-        $complaint = \App\Models\Complaint::firstOrFail();
+        $complaint = Complaint::firstOrFail();
 
         $this->actingAs($admin)->get('/admin/reclamaciones')->assertStatus(200)->assertSee($complaint->codigo_reclamo);
         $this->actingAs($admin)->patch("/admin/reclamaciones/{$complaint->id}", [
@@ -542,13 +633,13 @@ class BibliotecaSecurityAndFlowTest extends TestCase
 
         $this->actingAs($admin)->get('/admin/listas-espera')->assertStatus(200)->assertSee('La ciudad y los perros');
 
-        $review = \App\Models\Review::firstOrFail();
+        $review = Review::firstOrFail();
         $this->actingAs($admin)->get('/admin/resenas')->assertStatus(200);
         $this->actingAs($admin)->patch("/reviews/{$review->id}/visibilidad")->assertRedirect();
         $this->assertFalse($review->fresh()->visible);
 
         // Ni otro cliente ni un visitante público ven reseñas ocultas por moderación
-        \Illuminate\Support\Facades\Auth::logout();
+        Auth::logout();
         $this->get("/books/{$review->book_id}")->assertStatus(200)->assertDontSee($review->comentario);
     }
 
@@ -565,7 +656,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $loginRes->assertStatus(200)->assertJsonStructure(['token', 'token_type', 'user']);
         $token = $loginRes->json('token');
 
-        $this->withHeader('Authorization', 'Bearer ' . $token)
+        $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/v1/me')
             ->assertStatus(200)
             ->assertJsonPath('user.email', 'cliente@novaether.com');
@@ -573,7 +664,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $book = Book::where('stock_disponible', '>', 0)->firstOrFail();
 
         // La API rechaza pago con tarjeta si faltan datos o está expirada
-        $this->withHeader('Authorization', 'Bearer ' . $token)
+        $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/orders', [
                 'items' => [
                     ['book_id' => $book->id, 'tipo_operacion' => 'venta', 'cantidad' => 1],
@@ -584,7 +675,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             ->assertStatus(422)
             ->assertJsonValidationErrors(['card_number', 'card_expiry', 'card_cvv']);
 
-        $orderRes = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $orderRes = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/v1/orders', [
                 'items' => [
                     ['book_id' => $book->id, 'tipo_operacion' => 'venta', 'cantidad' => 1],
@@ -600,13 +691,13 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             ->assertJsonPath('data.estado_pago', 'pagado');
 
         $orderId = $orderRes->json('data.id');
-        $this->withHeader('Authorization', 'Bearer ' . $token)
+        $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson("/api/v1/orders/{$orderId}")
             ->assertStatus(200)
             ->assertJsonPath('data.id', $orderId);
 
         // Nuevos endpoints móviles de perfil y reseñas
-        $this->withHeader('Authorization', 'Bearer ' . $token)
+        $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson("/api/v1/books/{$book->id}/reviews", [
                 'rating' => 5,
                 'comentario' => 'Excelente entrega y calidad desde la app móvil.',
@@ -629,7 +720,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $karmaTrasPrimera = $cliente->reader->fresh()->puntos_karma;
         $this->assertSame($karmaBase + 10, $karmaTrasPrimera);
 
-        $reviewCreada = \App\Models\Review::where('book_id', $bookSinResena->id)
+        $reviewCreada = Review::where('book_id', $bookSinResena->id)
             ->where('user_id', $cliente->id)
             ->firstOrFail();
         $this->actingAs($cliente)->delete("/reviews/{$reviewCreada->id}")->assertRedirect();
@@ -656,7 +747,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
 
         // OrderController bloquea marcar 'entregado' si el pago aún está pendiente.
         $admin = User::where('email', 'admin@novaether.com')->firstOrFail();
-        $orderPendiente = \App\Models\Order::create([
+        $orderPendiente = Order::create([
             'codigo_orden' => 'ORD-TEST-PEND1',
             'user_id' => $cliente->id,
             'reader_id' => $cliente->reader->id,
@@ -676,10 +767,10 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $this->assertSame('pendiente', $orderPendiente->fresh()->estado_pedido);
 
         // 5. BookController limpia archivos locales reemplazados y eliminados
-        \Illuminate\Support\Facades\Storage::fake('public');
+        Storage::fake('public');
         $png1x1 = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
-        $file1 = \Illuminate\Http\UploadedFile::fake()->createWithContent('cover1.png', $png1x1);
-        $file2 = \Illuminate\Http\UploadedFile::fake()->createWithContent('cover2.png', $png1x1);
+        $file1 = UploadedFile::fake()->createWithContent('cover1.png', $png1x1);
+        $file2 = UploadedFile::fake()->createWithContent('cover2.png', $png1x1);
 
         $category = Category::firstOrFail();
         $this->actingAs($admin)->post('/books', [
@@ -695,7 +786,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
 
         $libroStorage = Book::where('isbn', '978-9999999901')->firstOrFail();
         $ruta1 = ltrim(substr($libroStorage->portada_url, strlen('/storage/')), '/');
-        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($ruta1);
+        Storage::disk('public')->assertExists($ruta1);
 
         $this->actingAs($admin)->put("/books/{$libroStorage->id}", [
             'category_id' => $category->id,
@@ -709,10 +800,10 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         ])->assertRedirect(route('books.index'));
 
         $ruta2 = ltrim(substr($libroStorage->fresh()->portada_url, strlen('/storage/')), '/');
-        \Illuminate\Support\Facades\Storage::disk('public')->assertMissing($ruta1);
-        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($ruta2);
+        Storage::disk('public')->assertMissing($ruta1);
+        Storage::disk('public')->assertExists($ruta2);
 
         $this->actingAs($admin)->delete("/books/{$libroStorage->id}")->assertRedirect(route('books.index'));
-        \Illuminate\Support\Facades\Storage::disk('public')->assertMissing($ruta2);
+        Storage::disk('public')->assertMissing($ruta2);
     }
 }

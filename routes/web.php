@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\Route;
 // PORTAL PÚBLICO DE NOVAETHER™
 Route::get('/', [BookController::class, 'index'])->name('home');
 Route::get('/books', [BookController::class, 'index'])->name('books.index');
+Route::get('/books/external-search', [BookController::class, 'externalSearch'])
+    ->middleware('throttle:30,1')
+    ->name('books.external-search');
 
 // Libro de Reclamaciones Virtual (Cumplimiento comercial Perú)
 Route::get('/libro-de-reclamaciones', [ComplaintController::class, 'create'])->name('complaints.create');
