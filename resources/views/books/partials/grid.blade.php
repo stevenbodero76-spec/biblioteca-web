@@ -2,7 +2,7 @@
     <span>
         Mostrando <strong class="text-white">{{ $books->count() }}</strong> de <strong class="text-amber-300">{{ $books->total() }}</strong> obras disponibles en el catálogo local
     </span>
-    @if(!empty($filtros['buscar']) || !empty($filtros['category_id']) || !empty($filtros['formato']) || !empty($filtros['disponibilidad']) || !empty($filtros['orden']))
+    @if(!empty($filtros['buscar']) || !empty($filtros['category_id']) || !empty($filtros['formato']) || !empty($filtros['idioma']) || !empty($filtros['licencia']) || !empty($filtros['disponibilidad']) || !empty($filtros['orden']))
         <span class="px-2.5 py-1 rounded-lg bg-amber-400/15 text-amber-300 border border-amber-400/30 font-bold">
             Filtros activos
         </span>

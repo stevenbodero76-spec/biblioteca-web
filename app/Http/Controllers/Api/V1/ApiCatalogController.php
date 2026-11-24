@@ -20,7 +20,7 @@ class ApiCatalogController extends Controller
 
     public function books(Request $request, BookLinkInterconnectorService $interconnector): JsonResponse
     {
-        $filtros = $request->only(['buscar', 'category_id', 'formato', 'disponibilidad', 'orden']);
+        $filtros = $request->only(['buscar', 'category_id', 'formato', 'idioma', 'licencia', 'disponibilidad', 'orden']);
 
         $books = Book::with('category')
             ->withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
@@ -30,7 +30,7 @@ class ApiCatalogController extends Controller
             ->paginate(min(50, max(1, (int) $request->query('per_page', 12))));
 
         $books->getCollection()->transform(function (Book $book) use ($interconnector) {
-            $enlaces = $interconnector->resolverEnlacesLectura($book);
+            $enlaces = $interconnector->resolverEnlacesLectura($book, false);
             $book->setAttribute('enlace_lectura_directa', $enlaces['principal_url']);
 
             return $book;
@@ -49,7 +49,9 @@ class ApiCatalogController extends Controller
             ->loadCount(['reviews' => fn ($q) => $q->where('visible', true)]);
 
         $enlaces = $interconnector->resolverEnlacesLectura($book);
-        if (empty($book->archivo_pdf)) {
+        if (! empty($enlaces['embed_url'])) {
+            $book->setAttribute('archivo_pdf', $enlaces['embed_url']);
+        } elseif (empty($book->archivo_pdf)) {
             $book->setAttribute('archivo_pdf', $enlaces['principal_url']);
         }
 

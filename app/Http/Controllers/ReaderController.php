@@ -21,7 +21,6 @@ class ReaderController extends Controller
 
         $readers = Reader::with('user')
             ->withCount([
-                'loans',
                 'loans as prestamos_activos_count' => fn ($q) => $q->whereIn('estado', ['prestado', 'vencido'])->where('estado_pago', '!=', 'anulado'),
             ])
             ->filtro($filtros)

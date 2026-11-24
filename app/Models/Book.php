@@ -58,6 +58,25 @@ class Book extends Model
         return $this->stock_disponible > 0;
     }
 
+    public function etiquetaIdioma(): string
+    {
+        return match ($this->idioma) {
+            'es' => 'Español',
+            'en' => 'Inglés',
+            default => 'Sin especificar',
+        };
+    }
+
+    public function etiquetaLicencia(): string
+    {
+        return match ($this->licencia) {
+            'dominio_publico' => 'Dominio Público',
+            'creative_commons' => 'Creative Commons',
+            'acceso_abierto' => 'Acceso Abierto',
+            default => 'Sin especificar',
+        };
+    }
+
     public function prestamosActivosCount(): int
     {
         return $this->loans()

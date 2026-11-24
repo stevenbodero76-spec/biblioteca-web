@@ -51,6 +51,25 @@
                 </select>
             </div>
 
+            <div>
+                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Idioma</label>
+                <select name="idioma" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
+                    <option value="">Sin especificar</option>
+                    <option value="es" @selected(old('idioma') === 'es')>🇪🇸 Español</option>
+                    <option value="en" @selected(old('idioma') === 'en')>🇬🇧 Inglés</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Licencia de lectura</label>
+                <select name="licencia" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
+                    <option value="">Sin especificar</option>
+                    <option value="dominio_publico" @selected(old('licencia') === 'dominio_publico')>Dominio Público</option>
+                    <option value="creative_commons" @selected(old('licencia') === 'creative_commons')>Creative Commons</option>
+                    <option value="acceso_abierto" @selected(old('licencia') === 'acceso_abierto')>Acceso Abierto</option>
+                </select>
+            </div>
+
             <div class="sm:col-span-2">
                 <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Título de la Obra *</label>
                 <input type="text" id="titulo" name="titulo" value="{{ old('titulo') }}" required placeholder="Nombre completo de la obra"
@@ -127,7 +146,7 @@
 
         <div class="pt-3 flex justify-end gap-2">
             <a href="{{ route('books.index') }}" class="px-4 py-2.5 rounded-xl border border-slate-700 text-xs font-bold text-slate-200 hover:bg-slate-800">Cancelar</a>
-            <button type="submit" class="bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-6 py-2.5 rounded-xl shadow-lg">
+            <button type="submit" class="bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-6 py-2.5 rounded-xl shadow-lg">
                 💾 Guardar Obra
             </button>
         </div>

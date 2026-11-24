@@ -130,4 +130,110 @@ class Rol2ExternalBookSearchTest extends TestCase
 
         $response->assertRedirect(route('home'));
     }
+
+    public function test_interconnector_resolves_openlibrary_urls_to_archive_embed_and_renders_iframe(): void
+    {
+        Http::fake([
+            'openlibrary.org/api/books*' => Http::response([
+                'ISBN:9780451524935' => [
+                    'title' => 'Nineteen Eighty-Four',
+                    'identifiers' => [
+                        'internet_archive' => ['nineteeneightyfo00orwe_8'],
+                    ],
+                ],
+            ], 200),
+            'openlibrary.org/books/OL7353617M.json' => Http::response([
+                'ocaid' => 'fantasticmrfox00dahl_0',
+            ], 200),
+            'openlibrary.org/works/OL1168083W/editions.json*' => Http::response([
+                'entries' => [
+                    ['title' => 'Edición sin scan'],
+                    ['title' => 'Edición digitalizada', 'ocaid' => 'mobydickorwhale00melv'],
+                ],
+            ], 200),
+        ]);
+
+        $service = new BookLinkInterconnectorService();
+
+        $this->assertSame(
+            'https://archive.org/embed/nineteeneightyfo00orwe_8',
+            $service->convertirAEmbedUrl('https://openlibrary.org/isbn/9780451524935')
+        );
+        $this->assertSame(
+            'https://archive.org/embed/fantasticmrfox00dahl_0',
+            $service->convertirAEmbedUrl('https://openlibrary.org/books/OL7353617M/Fantastic_Mr_Fox')
+        );
+        $this->assertSame(
+            'https://archive.org/embed/mobydickorwhale00melv',
+            $service->convertirAEmbedUrl('https://openlibrary.org/works/OL1168083W')
+        );
+
+        $categoria = Category::create(['nombre' => 'Distopía', 'icono' => '📖', 'slug' => 'distopia']);
+        $book = Book::create([
+            'category_id' => $categoria->id,
+            'isbn' => '978-0451524935',
+            'titulo' => '1984 (Open Library Link)',
+            'autor' => 'George Orwell',
+            'formato' => 'digital',
+            'idioma' => 'en',
+            'licencia' => 'dominio_publico',
+            'archivo_pdf' => 'https://openlibrary.org/isbn/9780451524935',
+            'stock_total' => 5,
+            'stock_disponible' => 5,
+        ]);
+
+        $response = $this->get(route('books.show', $book));
+        $response->assertStatus(200);
+        $response->assertSee('https://archive.org/embed/nineteeneightyfo00orwe_8');
+        $response->assertSee('<iframe', false);
+    }
+
+    public function test_catalog_and_api_filter_books_by_idioma_and_licencia(): void
+    {
+        $categoria = Category::create(['nombre' => 'Idiomas', 'icono' => '🌍', 'slug' => 'idiomas']);
+
+        $libroIngles = Book::create([
+            'category_id' => $categoria->id,
+            'isbn' => '978-0000000101',
+            'titulo' => 'Public Domain English Classic',
+            'autor' => 'Charles Dickens',
+            'formato' => 'digital',
+            'idioma' => 'en',
+            'licencia' => 'dominio_publico',
+            'stock_total' => 3,
+            'stock_disponible' => 3,
+        ]);
+
+        $libroEspanol = Book::create([
+            'category_id' => $categoria->id,
+            'isbn' => '978-0000000102',
+            'titulo' => 'Obra Moderna en Español',
+            'autor' => 'Autor Actual',
+            'formato' => 'digital',
+            'idioma' => 'es',
+            'licencia' => 'acceso_abierto',
+            'stock_total' => 3,
+            'stock_disponible' => 3,
+        ]);
+
+        $webRes = $this->get('/books?idioma=en&licencia=dominio_publico');
+        $webRes->assertStatus(200)
+            ->assertViewHas('books', function ($books) use ($libroIngles, $libroEspanol) {
+                $ids = $books->pluck('id')->all();
+
+                return in_array($libroIngles->id, $ids, true)
+                    && ! in_array($libroEspanol->id, $ids, true);
+            });
+
+        $partialRes = $this->getJson('/books?partial=1&idioma=en&licencia=dominio_publico');
+        $partialRes->assertStatus(200)
+            ->assertJsonPath('total', 1);
+        $this->assertStringContainsString($libroIngles->titulo, $partialRes->json('html'));
+        $this->assertStringNotContainsString($libroEspanol->titulo, $partialRes->json('html'));
+
+        $apiRes = $this->getJson('/api/v1/books?idioma=en&licencia=dominio_publico');
+        $apiRes->assertStatus(200)
+            ->assertJsonFragment(['titulo' => $libroIngles->titulo])
+            ->assertJsonMissing(['titulo' => $libroEspanol->titulo]);
+    }
 }

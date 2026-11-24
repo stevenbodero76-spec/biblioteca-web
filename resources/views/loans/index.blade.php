@@ -1,19 +1,19 @@
 @extends('layouts.app')
 
-@section('title', (auth()->user()->esCliente() ? 'Mis Tickets QR y Reservas' : 'Reservas, Pagos y Devoluciones') . ' · NOVAETHER™')
+@section('title', (auth()->user()->esCliente() ? 'Mis Tickets QR y Préstamos' : 'Control de Préstamos y Devoluciones') . ' · NOVAETHER™')
 
 @section('content')
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
         <h1 class="text-2xl font-extrabold text-white">
-            🔄 {{ auth()->user()->esCliente() ? 'Mis Tickets QR, Alquileres y Lista de Espera' : 'Control de Reservas, Caja y Devoluciones' }}
+            🔄 {{ auth()->user()->esCliente() ? 'Mis Tickets QR, Préstamos y Lista de Espera' : 'Control de Préstamos Públicos y Devoluciones' }}
         </h1>
         <p class="text-sm text-slate-300">
-            {{ auth()->user()->esCliente() ? 'Consulta tus fechas límite, estado de pago y tickets QR.' : 'Validación de cobros Yape/Plin/Mostrador, devoluciones y reposición automática.' }}
+            {{ auth()->user()->esCliente() ? 'Consulta tus fechas límite y tickets QR.' : 'Gestión de préstamos públicos gratuitos, devoluciones y reposición automática.' }}
         </p>
     </div>
     <a href="{{ route('loans.create') }}" class="bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl shadow transition">
-        🔥 Nuevo Alquiler / Préstamo
+        📖 Nuevo Préstamo Gratuito
     </a>
 </div>
 
@@ -65,12 +65,12 @@
 @endif
 
 <form method="GET" action="{{ route('loans.index') }}" class="bg-slate-900/95 rounded-2xl border border-slate-800 p-4 mb-6 shadow-xl">
-    <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
         <div class="sm:col-span-2">
             <label class="block text-[11px] font-extrabold uppercase text-slate-300 mb-1">
-                {{ auth()->user()->esCliente() ? 'Buscar por obra o código operación' : 'Buscar por obra, cliente, DNI u op.' }}
+                {{ auth()->user()->esCliente() ? 'Buscar por obra o título' : 'Buscar por obra, lector o DNI' }}
             </label>
-            <input type="text" name="buscar" value="{{ $filtros['buscar'] ?? '' }}" placeholder="Ej. One Piece, Dune, YP-..."
+            <input type="text" name="buscar" value="{{ $filtros['buscar'] ?? '' }}" placeholder="Ej. One Piece, Dune, ISBN..."
                    class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2 text-sm text-white placeholder-slate-400">
         </div>
         <div>
@@ -80,15 +80,6 @@
                 <option value="prestado" @selected(($filtros['estado'] ?? '') === 'prestado')>🟡 En Curso</option>
                 <option value="vencido" @selected(($filtros['estado'] ?? '') === 'vencido')>🔴 Vencido</option>
                 <option value="devuelto" @selected(($filtros['estado'] ?? '') === 'devuelto')>🟢 Cerrado / Devuelto</option>
-            </select>
-        </div>
-        <div>
-            <label class="block text-[11px] font-extrabold uppercase text-slate-300 mb-1">Pago</label>
-            <select name="estado_pago" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white">
-                <option value="">Todos</option>
-                <option value="pagado" @selected(($filtros['estado_pago'] ?? '') === 'pagado')>✓ Verificado</option>
-                <option value="pendiente" @selected(($filtros['estado_pago'] ?? '') === 'pendiente')>⏳ Pendiente</option>
-                <option value="anulado" @selected(($filtros['estado_pago'] ?? '') === 'anulado')>✕ Anulado</option>
             </select>
         </div>
         <div class="flex items-end gap-2">
@@ -106,7 +97,7 @@
                     <th class="py-3.5 px-4">Ticket</th>
                     <th class="py-3.5 px-4">Obra</th>
                     @if(auth()->user()->esAdmin())
-                        <th class="py-3.5 px-4">Cliente</th>
+                        <th class="py-3.5 px-4">Lector</th>
                     @endif
                     <th class="py-3.5 px-4">Modalidad</th>
                     <th class="py-3.5 px-4">Fechas</th>
@@ -125,7 +116,7 @@
                         @if(auth()->user()->esAdmin())
                             <td class="py-3.5 px-4">
                                 <p class="font-semibold text-slate-100">{{ $loan->reader->nombre_completo }}</p>
-                                <p class="text-xs text-slate-300">Doc: {{ $loan->reader->dni_codigo }}</p>
+                                <p class="text-xs text-slate-300">{{ $loan->reader->dni_codigo ? 'Doc: ' . $loan->reader->dni_codigo : 'Sin documento' }}</p>
                             </td>
                         @endif
                         <td class="py-3.5 px-4 text-xs">
