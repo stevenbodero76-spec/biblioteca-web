@@ -37,11 +37,8 @@ class StoreLoanRequest extends FormRequest
             'book_id' => ['required', 'integer', 'exists:books,id'],
             'reader_id' => ['required', 'integer', 'exists:readers,id'],
             'duracion_dias' => ['nullable', 'integer', 'in:7,14,30'],
-            'fecha_prestamo' => ['required', 'date', 'after_or_equal:' . now()->subDay()->toDateString(), 'before_or_equal:' . now()->addDays(7)->toDateString()],
+            'fecha_prestamo' => ['required', 'date', 'after_or_equal:'.now()->subDay()->toDateString(), 'before_or_equal:'.now()->addDays(7)->toDateString()],
             'fecha_devolucion_esperada' => ['required', 'date', 'after_or_equal:fecha_prestamo'],
-            'metodo_pago' => ['nullable', 'in:gratuito,membresia,yape_plin,mostrador'],
-            'codigo_operacion' => ['nullable', 'string', 'max:60'],
-            'pago_verificado_admin' => ['nullable', 'boolean'],
             'observaciones' => ['nullable', 'string', 'max:500'],
         ];
     }

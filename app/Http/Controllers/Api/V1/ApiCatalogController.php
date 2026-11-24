@@ -23,8 +23,7 @@ class ApiCatalogController extends Controller
         $filtros = $request->only(['buscar', 'category_id', 'formato', 'idioma', 'licencia', 'disponibilidad', 'orden']);
 
         $books = Book::with('category')
-            ->withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
-            ->withCount(['reviews' => fn ($q) => $q->where('visible', true)])
+            ->withVisibleRatingStats()
             ->filtro($filtros)
             ->ordenar($filtros['orden'] ?? null)
             ->paginate(min(50, max(1, (int) $request->query('per_page', 12))));
@@ -43,10 +42,10 @@ class ApiCatalogController extends Controller
     {
         $book->load([
             'category',
-            'reviews' => fn ($q) => $q->where('visible', true)->with('user:id,name')->latest(),
+            'reviews' => fn ($q) => $q->visibles()->with('user:id,name')->latest(),
         ])
-            ->loadAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
-            ->loadCount(['reviews' => fn ($q) => $q->where('visible', true)]);
+            ->loadAvg(['reviews' => fn ($q) => $q->visibles()], 'rating')
+            ->loadCount(['reviews' => fn ($q) => $q->visibles()]);
 
         $enlaces = $interconnector->resolverEnlacesLectura($book);
         if (! empty($enlaces['embed_url'])) {

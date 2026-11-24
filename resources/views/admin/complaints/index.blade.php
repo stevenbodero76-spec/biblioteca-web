@@ -79,8 +79,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Respuesta Oficial de la Tienda</label>
-                        <textarea name="respuesta_admin" rows="2" placeholder="Describe la solución o respuesta enviada al cliente..."
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Respuesta Oficial de la Biblioteca</label>
+                        <textarea name="respuesta_admin" rows="2" placeholder="Describe la solución o respuesta enviada al lector..."
                                   class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-xs text-white">{{ $item->respuesta_admin }}</textarea>
                     </div>
                     <div class="flex items-center justify-between">

@@ -28,12 +28,24 @@ class LoanPolicy
 
     public function returnBook(User $user, Loan $loan): bool
     {
-        return $user->esAdmin();
+        if ($user->esAdmin()) {
+            return true;
+        }
+
+        return $user->reader !== null
+            && (int) $loan->reader_id === (int) $user->reader->id
+            && $loan->esSoloDigital();
     }
 
-    public function managePayments(User $user): bool
+    public function renew(User $user, Loan $loan): bool
     {
-        return $user->esAdmin();
+        if ($user->esAdmin()) {
+            return true;
+        }
+
+        return $user->reader !== null
+            && (int) $loan->reader_id === (int) $user->reader->id
+            && $user->reader->estado === 'activo';
     }
 
     public function delete(User $user, Loan $loan): bool

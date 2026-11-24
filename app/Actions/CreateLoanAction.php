@@ -48,13 +48,9 @@ class CreateLoanAction
                 'fecha_prestamo' => $datos['fecha_prestamo'],
                 'fecha_devolucion_esperada' => $datos['fecha_devolucion_esperada'],
                 'estado' => 'prestado',
-                'metodo_pago' => 'membresia',
-                'monto' => 0.00,
-                'estado_pago' => 'pagado',
-                'codigo_operacion' => trim((string) ($datos['codigo_operacion'] ?? '')) ?: null,
-                'fecha_pago' => now(),
-                'expira_pago_at' => null,
-                'observaciones' => $datos['observaciones'] ?? 'Préstamo público gratuito.',
+                'observaciones' => filled($datos['observaciones'] ?? null)
+                    ? trim((string) $datos['observaciones'])
+                    : 'Préstamo público gratuito.',
             ]);
 
             $book->decrement('stock_disponible');
@@ -63,6 +59,8 @@ class CreateLoanAction
                 ->where('reader_id', $reader->id)
                 ->whereIn('estado', ['en_espera', 'notificado'])
                 ->update(['estado' => 'completado']);
+
+            Book::limpiarCacheCatalogo();
 
             return $loan;
         });

@@ -11,7 +11,7 @@ Artisan::command('inspire', function () {
 
 Artisan::command('loans:sync-overdue', function (SyncOverdueLoansAction $action) {
     $vencidos = $action->execute();
-    $this->info("Préstamos vencidos: {$vencidos} | Reservas/órdenes impagas liberadas: {$action->lastExpiredReleased}");
-})->purpose('Sincroniza préstamos vencidos y libera stock de reservas/órdenes impagas tras 24h');
+    $this->info("Préstamos vencidos sincronizados: {$vencidos}");
+})->purpose('Marca como vencidos los préstamos activos cuya fecha límite ya expiró');
 
 Schedule::command('loans:sync-overdue')->hourly();

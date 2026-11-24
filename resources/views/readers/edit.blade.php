@@ -19,25 +19,34 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">DNI / Código de Carnet (Opcional)</label>
-                <input type="text" name="dni_codigo" value="{{ old('dni_codigo', $reader->dni_codigo) }}" placeholder="Opcional"
+                <input type="text" name="dni_codigo" value="{{ old('dni_codigo', $reader->dni_codigo) }}"
+                       inputmode="numeric" data-input-mode="digits" pattern="[0-9]{6,20}" maxlength="20"
+                       title="Solo números (de 6 a 20 dígitos, sin letras)."
+                       placeholder="Opcional"
                        class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
             </div>
 
             <div>
                 <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Teléfono</label>
-                <input type="text" name="telefono" value="{{ old('telefono', $reader->telefono) }}"
+                <input type="tel" name="telefono" value="{{ old('telefono', $reader->telefono) }}"
+                       inputmode="numeric" data-input-mode="digits" pattern="[0-9]{7,15}" maxlength="15"
+                       title="Solo números (de 7 a 15 dígitos, sin letras)."
                        class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
             </div>
 
             <div>
                 <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Nombres *</label>
                 <input type="text" name="nombres" value="{{ old('nombres', $reader->nombres) }}" required
+                       data-input-mode="letters" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s.'-]+"
+                       title="Solo se permiten letras y espacios (sin números)."
                        class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
             </div>
 
             <div>
                 <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Apellidos *</label>
                 <input type="text" name="apellidos" value="{{ old('apellidos', $reader->apellidos) }}" required
+                       data-input-mode="letters" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s.'-]+"
+                       title="Solo se permiten letras y espacios (sin números)."
                        class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
             </div>
 

@@ -1,18 +1,19 @@
 @extends('layouts.app')
 
-@section('title', 'Mi Perfil y Karma · NOVAETHER™')
+@section('title', 'Mi Perfil y Puntos Nova · NOVAETHER™')
 
 @section('content')
 <div class="max-w-5xl mx-auto space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-extrabold text-white">👤 Mi Perfil, Plan y Puntos Nova</h1>
-            <p class="text-sm text-slate-300">Administra tus datos personales, contraseña e historial de recompensas.</p>
+            <h1 class="text-2xl font-extrabold text-white">👤 Mi Perfil y Puntos Nova</h1>
+            <p class="text-sm text-slate-300">Administra tus datos personales, contraseña e historial de recompensas de lectura.</p>
         </div>
         @if($reader)
             <div class="bg-slate-900 border border-amber-400/40 rounded-2xl px-4 py-2.5 text-right">
-                <span class="block text-[10px] font-black uppercase text-amber-300">{{ $reader->nivelKarma() }} · {{ $reader->etiquetaPlan() }}</span>
+                <span class="block text-[10px] font-black uppercase text-amber-300">{{ $reader->nivelKarma() }} · {{ $reader->etiquetaSegmento() }}</span>
                 <span class="text-lg font-black text-white">✨ {{ $reader->puntos_karma }} Puntos Nova</span>
+                <span class="block text-[11px] text-slate-300">{{ $resumenLector['prestamos_activos'] ?? 0 }} préstamos activos · {{ $resumenLector['favoritos'] ?? 0 }} en estantería</span>
             </div>
         @endif
     </div>
@@ -28,17 +29,23 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">Nombres *</label>
                         <input type="text" name="nombres" value="{{ old('nombres', $reader?->nombres ?? $user->name) }}" required
+                               data-input-mode="letters" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s.'-]+"
+                               title="Solo se permiten letras y espacios (sin números)."
                                class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2 text-sm text-white">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-300 mb-1">Apellidos *</label>
                         <input type="text" name="apellidos" value="{{ old('apellidos', $reader?->apellidos ?? 'NOVAETHER') }}" required
+                               data-input-mode="letters" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s.'-]+"
+                               title="Solo se permiten letras y espacios (sin números)."
                                class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2 text-sm text-white">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Teléfono / WhatsApp</label>
-                    <input type="text" name="telefono" value="{{ old('telefono', $reader?->telefono) }}"
+                    <input type="tel" name="telefono" value="{{ old('telefono', $reader?->telefono) }}"
+                           inputmode="numeric" data-input-mode="digits" pattern="[0-9]{7,15}" maxlength="15"
+                           title="Solo números (de 7 a 15 dígitos, sin letras)."
                            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2 text-sm text-white">
                 </div>
                 <div>
@@ -83,7 +90,7 @@
     <!-- Historial Karma -->
     <div class="bg-slate-900/95 rounded-3xl border border-slate-800 p-6">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-base font-extrabold text-white">✨ Movimientos de Puntos Nova (10 pts = S/ 1.00 en Carrito)</h2>
+            <h2 class="text-base font-extrabold text-white">✨ Movimientos de Puntos Nova (+25 pts por devolución puntual · +10 pts por reseña)</h2>
         </div>
         <div class="space-y-2">
             @forelse($movimientosKarma as $mov)

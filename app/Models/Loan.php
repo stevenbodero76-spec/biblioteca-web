@@ -16,12 +16,6 @@ class Loan extends Model
         'fecha_devolucion_esperada',
         'fecha_devolucion_real',
         'estado',
-        'metodo_pago',
-        'monto',
-        'estado_pago',
-        'codigo_operacion',
-        'fecha_pago',
-        'expira_pago_at',
         'observaciones',
     ];
 
@@ -31,9 +25,6 @@ class Loan extends Model
             'fecha_prestamo' => 'date',
             'fecha_devolucion_esperada' => 'date',
             'fecha_devolucion_real' => 'date',
-            'fecha_pago' => 'datetime',
-            'expira_pago_at' => 'datetime',
-            'monto' => 'decimal:2',
         ];
     }
 
@@ -52,19 +43,9 @@ class Loan extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function estaAnulado(): bool
-    {
-        return $this->estado_pago === 'anulado';
-    }
-
-    public function pagoPendiente(): bool
-    {
-        return $this->estado_pago === 'pendiente' && ! $this->estaAnulado();
-    }
-
     public function estaVencido(): bool
     {
-        if ($this->estado === 'devuelto' || $this->estaAnulado()) {
+        if ($this->estado === 'devuelto') {
             return false;
         }
 
@@ -72,17 +53,14 @@ class Loan extends Model
             || ($this->fecha_devolucion_esperada !== null && $this->fecha_devolucion_esperada->lt(today()));
     }
 
+    public function esSoloDigital(): bool
+    {
+        return $this->book?->formato === 'digital';
+    }
+
     public function etiquetaMetodoPago(): string
     {
         return 'Préstamo Público Gratuito';
-    }
-
-    public function etiquetaEstadoPago(): string
-    {
-        return match ($this->estado_pago) {
-            'anulado' => 'Anulado / Expirado',
-            default => 'Préstamo Gratuito Confirmado',
-        };
     }
 
     public function codigoTicket(): string
@@ -112,12 +90,10 @@ class Loan extends Model
         return $query
             ->when(trim((string) ($filtros['buscar'] ?? '')), function (Builder $q, string $buscar) {
                 $q->where(function (Builder $sub) use ($buscar) {
-                    $sub->where('codigo_operacion', 'like', "%{$buscar}%")
-                        ->orWhereHas('book', fn (Builder $b) => $b->where('titulo', 'like', "%{$buscar}%")->orWhere('isbn', 'like', "%{$buscar}%"))
+                    $sub->whereHas('book', fn (Builder $b) => $b->where('titulo', 'like', "%{$buscar}%")->orWhere('isbn', 'like', "%{$buscar}%"))
                         ->orWhereHas('reader', fn (Builder $r) => $r->where('nombres', 'like', "%{$buscar}%")->orWhere('apellidos', 'like', "%{$buscar}%")->orWhere('dni_codigo', 'like', "%{$buscar}%"));
                 });
             })
-            ->when($filtros['estado'] ?? null, fn (Builder $q, $estado) => $q->where('estado', $estado))
-            ->when($filtros['estado_pago'] ?? null, fn (Builder $q, $pago) => $q->where('estado_pago', $pago));
+            ->when($filtros['estado'] ?? null, fn (Builder $q, $estado) => $q->where('estado', $estado));
     }
 }

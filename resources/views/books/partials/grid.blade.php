@@ -71,11 +71,19 @@
                             </div>
 
                             <div class="pt-3 border-t border-slate-800/80 flex flex-col gap-2">
-                                <a href="{{ $ext['archivo_pdf'] }}" target="_blank" rel="noopener noreferrer"
-                                   class="w-full inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-xs py-2 px-3 rounded-xl transition shadow">
-                                    <span>📖 Leer Gratis en Línea</span>
-                                    <span>↗</span>
-                                </a>
+                                @auth
+                                    <a href="{{ $ext['archivo_pdf'] }}" target="_blank" rel="noopener noreferrer"
+                                       class="w-full inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-xs py-2 px-3 rounded-xl transition shadow">
+                                        <span>📖 Leer Gratis en Línea</span>
+                                        <span>↗</span>
+                                    </a>
+                                @else
+                                    <a href="{{ route('login') }}"
+                                       class="w-full inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-xs py-2 px-3 rounded-xl transition shadow">
+                                        <span>🔒 Inicia sesión · Leer Gratis en Línea</span>
+                                        <span>→</span>
+                                    </a>
+                                @endauth
 
                                 @auth
                                     @if(auth()->user()->esAdmin())

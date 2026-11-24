@@ -49,7 +49,7 @@
                         </td>
                         <td class="py-3.5 px-4 text-xs">
                             <p class="font-bold text-slate-100">{{ $wl->reader->nombre_completo }}</p>
-                            <p class="text-slate-400">{{ $wl->reader->email }} · {{ $wl->reader->etiquetaPlan() }}</p>
+                            <p class="text-slate-400">{{ $wl->reader->email }} · {{ $wl->reader->etiquetaSegmento() }}</p>
                         </td>
                         <td class="py-3.5 px-4">
                             <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $wl->estado === 'notificado' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300' }}">

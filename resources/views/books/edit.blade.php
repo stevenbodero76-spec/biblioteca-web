@@ -9,7 +9,10 @@
             <h1 class="text-2xl font-extrabold text-white">✏️ Editar Obra</h1>
             <p class="text-sm text-slate-300">Modificando: <strong class="text-amber-300">{{ $book->titulo }}</strong></p>
         </div>
-        <a href="{{ route('books.index') }}" class="text-xs font-extrabold uppercase text-amber-400 hover:underline">← Volver al catálogo</a>
+        <div class="flex flex-wrap items-center gap-3">
+            <a href="{{ route('admin.books.index') }}" class="text-xs font-extrabold uppercase text-emerald-300 hover:underline">📚 Gestión de Libros</a>
+            <a href="{{ route('books.index') }}" class="text-xs font-extrabold uppercase text-amber-400 hover:underline">← Catálogo</a>
+        </div>
     </div>
 
     <div class="mb-5 bg-slate-900 border border-amber-400/30 rounded-2xl p-4 text-xs text-slate-200">
@@ -72,21 +75,19 @@
             </div>
 
             <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Idioma</label>
-                <select name="idioma" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
-                    <option value="">Sin especificar</option>
-                    <option value="es" @selected(old('idioma', $book->idioma) === 'es')>🇪🇸 Español</option>
+                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Idioma *</label>
+                <select name="idioma" required class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
+                    <option value="es" @selected(old('idioma', $book->idioma ?: 'es') === 'es')>🇪🇸 Español</option>
                     <option value="en" @selected(old('idioma', $book->idioma) === 'en')>🇬🇧 Inglés</option>
                 </select>
             </div>
 
             <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Licencia de lectura</label>
-                <select name="licencia" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
-                    <option value="">Sin especificar</option>
+                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Licencia de lectura *</label>
+                <select name="licencia" required class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
+                    <option value="acceso_abierto" @selected(old('licencia', $book->licencia ?: 'acceso_abierto') === 'acceso_abierto')>Acceso Abierto</option>
                     <option value="dominio_publico" @selected(old('licencia', $book->licencia) === 'dominio_publico')>Dominio Público</option>
                     <option value="creative_commons" @selected(old('licencia', $book->licencia) === 'creative_commons')>Creative Commons</option>
-                    <option value="acceso_abierto" @selected(old('licencia', $book->licencia) === 'acceso_abierto')>Acceso Abierto</option>
                 </select>
             </div>
 

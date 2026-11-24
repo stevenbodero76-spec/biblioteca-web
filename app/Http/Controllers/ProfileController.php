@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\KarmaMovement;
+use App\Http\Requests\ReaderRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,12 +18,15 @@ class ProfileController extends Controller
         $reader = $user->reader;
 
         $movimientosKarma = $reader
-            ? KarmaMovement::where('reader_id', $reader->id)->latest('id')->take(15)->get()
+            ? $reader->karmaMovements()->take(15)->get()
             : collect();
 
-        $ordenesRecientes = $user->orders()->latest()->take(5)->get();
+        $resumenLector = [
+            'prestamos_activos' => $reader?->prestamosActivosCount() ?? 0,
+            'favoritos' => $user->favorites()->count(),
+        ];
 
-        return view('profile.edit', compact('user', 'reader', 'movimientosKarma', 'ordenesRecientes'));
+        return view('profile.edit', compact('user', 'reader', 'movimientosKarma', 'resumenLector'));
     }
 
     public function update(Request $request): RedirectResponse
@@ -31,10 +34,12 @@ class ProfileController extends Controller
         $user = $request->user();
         $reader = $user->reader;
 
+        $identity = ReaderRequest::identityRules(false);
+
         $datos = $request->validate([
-            'nombres' => ['required', 'string', 'max:100'],
-            'apellidos' => ['required', 'string', 'max:100'],
-            'telefono' => ['nullable', 'string', 'max:20'],
+            'nombres' => $identity['nombres'],
+            'apellidos' => $identity['apellidos'],
+            'telefono' => $identity['telefono'],
             'email' => [
                 'required',
                 'email',
@@ -42,11 +47,11 @@ class ProfileController extends Controller
                 Rule::unique('users', 'email')->ignore($user->id),
                 Rule::unique('readers', 'email')->ignore($reader?->id),
             ],
-        ]);
+        ], ReaderRequest::identityMessages());
 
         DB::transaction(function () use ($user, $reader, $datos) {
             $user->update([
-                'name' => trim($datos['nombres'] . ' ' . $datos['apellidos']),
+                'name' => trim($datos['nombres'].' '.$datos['apellidos']),
                 'email' => $datos['email'],
             ]);
 

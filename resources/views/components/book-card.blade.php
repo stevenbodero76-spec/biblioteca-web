@@ -6,6 +6,8 @@
         ->whereIn('nombre', ['Open Library', 'Internet Archive', 'MangaPlus'])
         ->values();
 
+    $puedeLeer = auth()->check();
+
     $quickViewPayload = [
         'id' => $book->id,
         'titulo' => $book->titulo,
@@ -18,8 +20,9 @@
         'idioma' => $book->etiquetaIdioma(),
         'licencia' => $book->etiquetaLicencia(),
         'sinopsis' => $book->sinopsis ?? 'Obra disponible en el catálogo oficial de NOVAETHER™.',
-        'read_url' => $book->archivo_pdf ?: ($fuentesLectura[0]['url'] ?? route('books.show', $book)),
-        'fuentes' => $fuentesLectura,
+        'read_url' => route('books.read', $book),
+        'requires_auth' => ! $puedeLeer,
+        'fuentes' => $puedeLeer ? $fuentesLectura : [],
         'portada_url' => $book->portada_url,
         'disponible' => $book->estaDisponible(),
         'stock_texto' => $book->estaDisponible()
@@ -152,12 +155,23 @@
 
         <div class="flex flex-wrap gap-1.5">
             @foreach($fuentesRapidas as $fuente)
-                <a href="{{ $fuente['url'] }}" target="_blank" rel="noopener noreferrer"
-                   class="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] font-bold text-slate-200 transition hover:border-amber-400/60 hover:text-amber-200"
-                   aria-label="Abrir {{ $fuente['nombre'] }} para {{ $book->titulo }}">
-                    <span aria-hidden="true">{{ $fuente['icono'] }}</span>
-                    <span>{{ $fuente['nombre'] }}</span>
-                </a>
+                @auth
+                    <a href="{{ $fuente['url'] }}" target="_blank" rel="noopener noreferrer"
+                       class="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] font-bold text-slate-200 transition hover:border-amber-400/60 hover:text-amber-200"
+                       aria-label="Abrir {{ $fuente['nombre'] }} para {{ $book->titulo }}">
+                        <span aria-hidden="true">{{ $fuente['icono'] }}</span>
+                        <span>{{ $fuente['nombre'] }}</span>
+                    </a>
+                @else
+                    <a href="{{ route('books.read', $book) }}"
+                       class="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] font-bold text-slate-300 transition hover:border-amber-400/60 hover:text-amber-200"
+                       title="Inicia sesión para abrir {{ $fuente['nombre'] }}"
+                       aria-label="Inicia sesión para abrir {{ $fuente['nombre'] }} en {{ $book->titulo }}">
+                        <span aria-hidden="true">{{ $fuente['icono'] }}</span>
+                        <span>{{ $fuente['nombre'] }}</span>
+                        <span aria-hidden="true">🔒</span>
+                    </a>
+                @endauth
             @endforeach
         </div>
     </div>

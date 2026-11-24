@@ -45,7 +45,7 @@ class ReviewController extends Controller
             ? " (+{$resultado['karma_awarded']} Puntos Nova por tu primera reseña de esta obra)"
             : '';
 
-        return back()->with('success', '⭐ ¡Gracias! Tu reseña fue publicada en la comunidad' . $bonusMsg . '.');
+        return back()->with('success', '⭐ ¡Gracias! Tu reseña fue publicada en la comunidad'.$bonusMsg.'.');
     }
 
     public function toggleVisibility(Request $request, Review $review): RedirectResponse
@@ -55,6 +55,8 @@ class ReviewController extends Controller
             'visible' => $nuevoEstado,
             'moderado_por_id' => $request->user()->id,
         ]);
+
+        Book::limpiarCacheCatalogo();
 
         return back()->with('success', $nuevoEstado ? 'Reseña visible nuevamente al público.' : 'Reseña ocultada por moderación administrativa.');
     }
@@ -67,6 +69,7 @@ class ReviewController extends Controller
         }
 
         $review->delete();
+        Book::limpiarCacheCatalogo();
 
         return back()->with('success', 'Reseña eliminada correctamente.');
     }

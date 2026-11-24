@@ -14,18 +14,26 @@ class BookRequest extends FormRequest
         return $this->user()?->esAdmin() ?? false;
     }
 
-    public function rules(): array
+    protected function prepareForValidation(): void
     {
-        /** @var Book|null $book */
-        $book = $this->route('book');
+        $this->merge([
+            'idioma' => $this->filled('idioma') ? $this->input('idioma') : 'es',
+            'licencia' => $this->filled('licencia') ? $this->input('licencia') : 'acceso_abierto',
+        ]);
+    }
 
-        $safeMediaLocation = function (string $attribute, mixed $value, \Closure $fail): void {
+    /**
+     * Regla reutilizable para validar ubicaciones de portada/PDF (http/https o /storage/).
+     */
+    public static function safeMediaLocationRule(bool $allowLocalStorage = true): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($allowLocalStorage): void {
             if ($value === null || $value === '') {
                 return;
             }
 
             $str = (string) $value;
-            if (str_starts_with($str, '/storage/') && ! str_contains($str, '..')) {
+            if ($allowLocalStorage && str_starts_with($str, '/storage/') && ! str_contains($str, '..')) {
                 return;
             }
 
@@ -34,8 +42,19 @@ class BookRequest extends FormRequest
                 return;
             }
 
-            $fail("El campo {$attribute} debe ser una URL válida http/https o un archivo subido al almacenamiento local.");
+            $mensaje = $allowLocalStorage
+                ? "El campo {$attribute} debe ser una URL válida http/https o un archivo subido al almacenamiento local."
+                : "El campo {$attribute} debe ser una URL válida con protocolo http o https.";
+
+            $fail($mensaje);
         };
+    }
+
+    public function rules(): array
+    {
+        /** @var Book|null $book */
+        $book = $this->route('book');
+        $safeMediaLocation = self::safeMediaLocationRule(true);
 
         return [
             'category_id' => ['required', 'integer', 'exists:categories,id'],
@@ -50,11 +69,11 @@ class BookRequest extends FormRequest
             'editorial' => ['nullable', 'string', 'max:100'],
             'anio_publicacion' => ['nullable', 'integer', 'min:1000', 'max:'.(date('Y') + 1)],
             'formato' => ['required', 'in:fisico,digital,ambos'],
-            'idioma' => ['nullable', 'in:es,en'],
-            'licencia' => ['nullable', 'in:dominio_publico,creative_commons,acceso_abierto'],
+            'idioma' => ['required', 'in:es,en'],
+            'licencia' => ['required', 'in:dominio_publico,creative_commons,acceso_abierto'],
             'sinopsis' => ['nullable', 'string', 'max:5000'],
-            'portada_url' => ['nullable', 'string', 'max:255', $safeMediaLocation],
-            'archivo_pdf' => ['nullable', 'string', 'max:255', $safeMediaLocation],
+            'portada_url' => ['nullable', 'string', 'max:500', $safeMediaLocation],
+            'archivo_pdf' => ['nullable', 'string', 'max:500', $safeMediaLocation],
             'portada_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
             'pdf_file' => ['nullable', 'file', 'mimes:pdf', 'max:15360'],
             'ubicacion_estante' => ['nullable', 'string', 'max:50'],

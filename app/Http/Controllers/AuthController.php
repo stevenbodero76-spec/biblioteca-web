@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\KarmaMovement;
-use App\Models\Reader;
+use App\Actions\RegisterReaderUserAction;
+use App\Http\Requests\ReaderRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -67,53 +66,32 @@ class AuthController extends Controller
         return view('auth.register');
     }
 
-    public function register(Request $request): RedirectResponse
+    public function register(Request $request, RegisterReaderUserAction $registerAction): RedirectResponse
     {
+        $identity = ReaderRequest::identityRules(true);
+
         $datos = $request->validate([
-            'nombres' => ['required', 'string', 'max:100'],
-            'apellidos' => ['required', 'string', 'max:100'],
-            'dni_codigo' => ['nullable', 'string', 'max:20', 'unique:readers,dni_codigo'],
-            'telefono' => ['nullable', 'string', 'max:20'],
+            'nombres' => $identity['nombres'],
+            'apellidos' => $identity['apellidos'],
+            'dni_codigo' => [...$identity['dni_codigo'], 'unique:readers,dni_codigo'],
+            'telefono' => $identity['telefono'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email', 'unique:readers,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
-        ]);
+        ], ReaderRequest::identityMessages());
 
-        $user = DB::transaction(function () use ($datos) {
-            $nuevoUsuario = User::create([
-                'name' => trim($datos['nombres'].' '.$datos['apellidos']),
-                'email' => $datos['email'],
-                'rol' => 'cliente',
-                'password' => Hash::make($datos['password']),
-            ]);
-
-            $reader = Reader::create([
-                'user_id' => $nuevoUsuario->id,
-                'dni_codigo' => $datos['dni_codigo'] ?? null,
-                'nombres' => $datos['nombres'],
-                'apellidos' => $datos['apellidos'],
-                'email' => $datos['email'],
-                'telefono' => $datos['telefono'] ?? null,
-                'tipo' => 'publico',
-                'estado' => 'activo',
-                'puntos_karma' => 50,
-            ]);
-
-            KarmaMovement::create([
-                'reader_id' => $reader->id,
-                'puntos' => 50,
-                'motivo' => 'Bono de bienvenida NOVAETHER™',
-                'referencia_tipo' => 'register',
-                'referencia_id' => $nuevoUsuario->id,
-            ]);
-
-            return $nuevoUsuario;
-        });
+        $user = $registerAction->execute(
+            $datos,
+            'publico',
+            'activo',
+            'Bono de bienvenida NOVAETHER™',
+            'register'
+        );
 
         Auth::login($user);
         $request->session()->regenerate();
 
         return redirect()
-            ->route('home')
+            ->intended(route('home'))
             ->with('success', '¡Cuenta creada con éxito! Ya eres miembro de NOVAETHER™ y recibiste 50 Puntos Nova de bienvenida.');
     }
 

@@ -6,7 +6,7 @@
 <div class="max-w-2xl mx-auto">
     <div class="mb-6 flex items-center justify-between">
         <div>
-            <span class="text-[11px] font-black uppercase tracking-widest text-amber-400">Cumplimiento Comercial · Perú</span>
+            <span class="text-[11px] font-black uppercase tracking-widest text-amber-400">Atención al Lector · Perú</span>
             <h1 class="text-2xl font-extrabold text-white mt-0.5">📖 Libro de Reclamaciones Virtual</h1>
             <p class="text-xs text-slate-300 mt-1">Conforme al Código de Protección y Defensa del Consumidor (Ley N° 29571).</p>
         </div>

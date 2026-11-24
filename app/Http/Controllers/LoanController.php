@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\CreateLoanAction;
+use App\Actions\RenewLoanAction;
 use App\Actions\ReturnLoanAction;
 use App\Http\Requests\StoreLoanRequest;
 use App\Models\Book;
@@ -25,7 +26,7 @@ class LoanController extends Controller
         Gate::authorize('viewAny', Loan::class);
 
         $user = $request->user();
-        $filtros = $request->only(['buscar', 'estado', 'estado_pago']);
+        $filtros = $request->only(['buscar', 'estado']);
 
         $loans = Loan::with(['book.category', 'reader', 'user'])
             ->visiblePara($user)
@@ -102,11 +103,11 @@ class LoanController extends Controller
         return view('loans.ticket', compact('loan', 'qrDataUri'));
     }
 
-    public function devolver(Loan $loan, ReturnLoanAction $returnLoanAction): RedirectResponse
+    public function devolver(Request $request, Loan $loan, ReturnLoanAction $returnLoanAction): RedirectResponse
     {
         Gate::authorize('returnBook', $loan);
 
-        if (! $returnLoanAction->execute($loan)) {
+        if (! $returnLoanAction->execute($loan, $request->user())) {
             return back()->with('error', 'Este préstamo ya fue cerrado o devuelto anteriormente.');
         }
 
@@ -119,17 +120,30 @@ class LoanController extends Controller
             ->with('success', "Devolución registrada. Stock de «{$loan->book->titulo}» actualizado{$mensajeKarma}.");
     }
 
+    public function renovar(Loan $loan, RenewLoanAction $renewLoanAction): RedirectResponse
+    {
+        Gate::authorize('renew', $loan);
+
+        $renovado = $renewLoanAction->execute($loan);
+
+        return redirect()
+            ->route('loans.index')
+            ->with('success', "Préstamo de «{$renovado->book->titulo}» renovado hasta el {$renovado->fecha_devolucion_esperada->format('d/m/Y')}.");
+    }
+
     public function destroy(Loan $loan): RedirectResponse
     {
         Gate::authorize('delete', $loan);
 
         DB::transaction(function () use ($loan) {
-            if ($loan->estado !== 'devuelto' && ! $loan->estaAnulado()) {
+            if ($loan->estado !== 'devuelto') {
                 $loan->book?->restaurarStockYNotificar(1, false);
             }
 
             $loan->delete();
         });
+
+        Book::limpiarCacheCatalogo();
 
         return redirect()
             ->route('loans.index')

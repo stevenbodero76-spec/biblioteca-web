@@ -34,8 +34,8 @@
                 <!-- Buscador rápido sincronizado con el filtro en vivo -->
                 <form method="GET" action="{{ route('books.index') }}" class="pt-1" onsubmit="event.preventDefault(); document.getElementById('live-search-input').value = this.buscar.value; document.getElementById('live-search-input').dispatchEvent(new Event('input')); document.getElementById('catalogo-resultados').scrollIntoView({behavior:'smooth'});">
                     <div class="flex flex-col sm:flex-row gap-2 bg-slate-950/90 p-2 rounded-2xl border border-slate-700 focus-within:border-amber-400 transition shadow-inner">
-                        <input type="text" name="buscar" value="{{ $filtros['buscar'] ?? '' }}"
-                               placeholder="Busca al instante por título, autor, ISBN, One Piece, Batman, Dune..."
+                        <input type="text" id="hero-search-input" name="buscar" value="{{ $filtros['buscar'] ?? '' }}"
+                               placeholder="Busca al instante por título, autor, ISBN, One Piece, Batman, Cervantes..."
                                class="flex-1 bg-transparent px-4 py-2.5 text-sm text-white placeholder-slate-400 focus:outline-none">
                         <button type="submit"
                                 class="bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm px-6 py-3 rounded-xl transition shadow-lg">
@@ -239,89 +239,76 @@
     </button>
 </div>
 
-<!-- BARRA DE FILTROS EN VIVO Y ORDENAMIENTO DINÁMICO -->
-<form id="live-filter-form" method="GET" action="{{ route('books.index') }}" class="hidden lg:block bg-slate-900/95 rounded-2xl border border-slate-800 p-4 mb-6 shadow-xl">
+<!-- BARRA COMPACTA DE ORDENAMIENTO Y FILTROS EN VIVO -->
+@php
+    $avanzadosActivos = !empty($filtros['disponibilidad']) || !empty($filtros['licencia']) || !empty($filtros['formato']);
+@endphp
+<form id="live-filter-form" method="GET" action="{{ route('books.index') }}" class="hidden lg:block bg-slate-900/95 rounded-2xl border border-slate-800 px-4 py-3 mb-6 shadow-xl">
     <input type="hidden" id="live-category-input" name="category_id" value="{{ $filtros['category_id'] ?? '' }}">
+    <input type="hidden" id="live-search-input" name="buscar" value="{{ $filtros['buscar'] ?? '' }}">
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end">
-        <div class="lg:col-span-4">
-            <label for="live-search-input" class="block text-[11px] font-extrabold uppercase text-slate-300 mb-1.5">Buscar en vivo</label>
-            <input type="text" id="live-search-input" name="buscar" value="{{ $filtros['buscar'] ?? '' }}" placeholder="Título, autor, ISBN o editorial..."
-                   class="w-full h-10 rounded-xl bg-slate-950 border border-slate-700 px-3.5 text-sm text-white placeholder-slate-400 focus:border-amber-400 focus:outline-none">
-        </div>
-
-        <div class="lg:col-span-2">
-            <label for="live-orden-select" class="block text-[11px] font-extrabold uppercase text-slate-300 mb-1.5">Ordenar por</label>
-            <div class="relative">
-                <select id="live-orden-select" name="orden" class="appearance-none w-full h-10 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
-                    <option value="">Más recientes</option>
-                    <option value="mejor_valorados" @selected(($filtros['orden'] ?? '') === 'mejor_valorados')>Mejor valorados</option>
-                    <option value="mayor_stock" @selected(($filtros['orden'] ?? '') === 'mayor_stock')>Mayor disponibilidad</option>
+    <div class="flex flex-wrap items-center justify-between gap-2.5">
+        <div class="flex flex-wrap items-center gap-2.5 flex-1">
+            <div class="relative min-w-44">
+                <label for="live-orden-select" class="sr-only">Ordenar por</label>
+                <select id="live-orden-select" name="orden" class="appearance-none w-full h-9 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
+                    <option value="">Orden: Más recientes</option>
+                    <option value="mejor_valorados" @selected(($filtros['orden'] ?? '') === 'mejor_valorados')>Orden: Mejor valorados</option>
+                    <option value="mayor_stock" @selected(($filtros['orden'] ?? '') === 'mayor_stock')>Orden: Mayor disponibilidad</option>
                 </select>
-                <svg class="w-4 h-4 text-slate-400 pointer-events-none absolute right-2.5 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                <svg class="w-4 h-4 text-slate-400 pointer-events-none absolute right-2.5 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
             </div>
-        </div>
 
-        <div class="lg:col-span-2">
-            <label for="live-idioma-select" class="block text-[11px] font-extrabold uppercase text-slate-300 mb-1.5">Idioma</label>
-            <div class="relative">
-                <select id="live-idioma-select" name="idioma" class="appearance-none w-full h-10 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
-                    <option value="">Todos los idiomas</option>
+            <div class="relative min-w-40">
+                <label for="live-idioma-select" class="sr-only">Idioma</label>
+                <select id="live-idioma-select" name="idioma" class="appearance-none w-full h-9 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
+                    <option value="">Idioma: Todos</option>
                     <option value="es" @selected(($filtros['idioma'] ?? '') === 'es')>🇪🇸 Español</option>
                     <option value="en" @selected(($filtros['idioma'] ?? '') === 'en')>🇬🇧 Inglés</option>
                 </select>
-                <svg class="w-4 h-4 text-slate-400 pointer-events-none absolute right-2.5 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                <svg class="w-4 h-4 text-slate-400 pointer-events-none absolute right-2.5 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
             </div>
-        </div>
 
-        <div class="lg:col-span-2">
-            <label for="live-licencia-select" class="block text-[11px] font-extrabold uppercase text-slate-300 mb-1.5">Licencia</label>
-            <div class="relative">
-                <select id="live-licencia-select" name="licencia" class="appearance-none w-full h-10 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
-                    <option value="">Todas las licencias</option>
-                    <option value="dominio_publico" @selected(($filtros['licencia'] ?? '') === 'dominio_publico')>Dominio Público</option>
-                    <option value="creative_commons" @selected(($filtros['licencia'] ?? '') === 'creative_commons')>Creative Commons</option>
-                    <option value="acceso_abierto" @selected(($filtros['licencia'] ?? '') === 'acceso_abierto')>Acceso Abierto</option>
-                </select>
-                <svg class="w-4 h-4 text-slate-400 pointer-events-none absolute right-2.5 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
-            </div>
-        </div>
-
-        <div class="lg:col-span-2">
-            <label for="live-formato-select" class="block text-[11px] font-extrabold uppercase text-slate-300 mb-1.5">Formato</label>
-            <div class="relative">
-                <select id="live-formato-select" name="formato" class="appearance-none w-full h-10 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
-                    <option value="">Todos los formatos</option>
-                    <option value="ambos" @selected(($filtros['formato'] ?? '') === 'ambos')>Físico + Digital</option>
-                    <option value="digital" @selected(($filtros['formato'] ?? '') === 'digital')>Solo Digital</option>
-                    <option value="fisico" @selected(($filtros['formato'] ?? '') === 'fisico')>Solo Físico</option>
-                </select>
-                <svg class="w-4 h-4 text-slate-400 pointer-events-none absolute right-2.5 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
-            </div>
-        </div>
-
-        <div class="lg:col-span-2">
-            <label for="live-stock-select" class="block text-[11px] font-extrabold uppercase text-slate-300 mb-1.5">Disponibilidad</label>
-            <div class="relative">
-                <select id="live-stock-select" name="disponibilidad" class="appearance-none w-full h-10 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
-                    <option value="">Todo el stock</option>
-                    <option value="disponible" @selected(($filtros['disponibilidad'] ?? '') === 'disponible')>Con stock disponible</option>
-                    <option value="agotado" @selected(($filtros['disponibilidad'] ?? '') === 'agotado')>Agotados (Lista espera)</option>
-                </select>
-                <svg class="w-4 h-4 text-slate-400 pointer-events-none absolute right-2.5 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
-            </div>
-        </div>
-
-        <div class="lg:col-span-2 flex items-center gap-2">
-            <button type="submit" class="flex-1 h-10 inline-flex items-center justify-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black px-3 rounded-xl transition shadow">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 105.64 5.64a7.5 7.5 0 0010.61 10.61z" />
-                </svg>
-                <span>Filtrar</span>
+            <button type="button" id="toggle-advanced-filters"
+                    class="h-9 inline-flex items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition {{ $avanzadosActivos ? 'bg-amber-400/15 border-amber-400/50 text-amber-300' : 'bg-slate-950 border-slate-700 text-slate-200 hover:border-amber-400/50' }}">
+                <span>⚙️ Más filtros</span>
+                <span class="text-[10px]">▾</span>
             </button>
-            <button type="button" id="live-reset-btn" class="h-10 inline-flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 rounded-xl transition">
-                Limpiar
-            </button>
+        </div>
+
+        <button type="button" id="live-reset-btn" class="h-9 inline-flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3.5 rounded-xl transition">
+            Limpiar
+        </button>
+    </div>
+
+    <div id="advanced-filters-panel" class="{{ $avanzadosActivos ? 'grid' : 'hidden' }} grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 mt-3 border-t border-slate-800/80">
+        <div class="relative">
+            <label for="live-stock-select" class="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">Disponibilidad</label>
+            <select id="live-stock-select" name="disponibilidad" class="appearance-none w-full h-9 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
+                <option value="">Todo el stock</option>
+                <option value="disponible" @selected(($filtros['disponibilidad'] ?? '') === 'disponible')>Con stock disponible</option>
+                <option value="agotado" @selected(($filtros['disponibilidad'] ?? '') === 'agotado')>Agotados (Lista espera)</option>
+            </select>
+        </div>
+
+        <div class="relative">
+            <label for="live-licencia-select" class="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">Licencia</label>
+            <select id="live-licencia-select" name="licencia" class="appearance-none w-full h-9 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
+                <option value="">Todas las licencias</option>
+                <option value="dominio_publico" @selected(($filtros['licencia'] ?? '') === 'dominio_publico')>Dominio Público</option>
+                <option value="creative_commons" @selected(($filtros['licencia'] ?? '') === 'creative_commons')>Creative Commons</option>
+                <option value="acceso_abierto" @selected(($filtros['licencia'] ?? '') === 'acceso_abierto')>Acceso Abierto</option>
+            </select>
+        </div>
+
+        <div class="relative">
+            <label for="live-formato-select" class="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">Formato</label>
+            <select id="live-formato-select" name="formato" class="appearance-none w-full h-9 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
+                <option value="">Todos los formatos</option>
+                <option value="ambos" @selected(($filtros['formato'] ?? '') === 'ambos')>Físico + Digital</option>
+                <option value="digital" @selected(($filtros['formato'] ?? '') === 'digital')>Solo Digital</option>
+                <option value="fisico" @selected(($filtros['formato'] ?? '') === 'fisico')>Solo Físico</option>
+            </select>
         </div>
     </div>
 </form>

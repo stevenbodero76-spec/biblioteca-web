@@ -29,11 +29,15 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/favorites', [ApiCustomerController::class, 'favorites']);
         Route::post('/books/{book}/favorite', [ApiCustomerController::class, 'toggleFavorite']);
+        Route::get('/waitlists', [ApiCustomerController::class, 'waitlists']);
         Route::post('/books/{book}/waitlist', [ApiCustomerController::class, 'joinWaitlist']);
         Route::delete('/waitlists/{waitlist}', [ApiCustomerController::class, 'cancelWaitlist']);
         Route::post('/books/{book}/reviews', [ApiCustomerController::class, 'storeReview']);
+        Route::delete('/reviews/{review}', [ApiCustomerController::class, 'destroyReview']);
 
         Route::get('/loans', [ApiCustomerController::class, 'loans']);
         Route::post('/loans', [ApiCustomerController::class, 'storeLoan']);
+        Route::patch('/loans/{loan}/devolver', [ApiCustomerController::class, 'devolverLoan']);
+        Route::patch('/loans/{loan}/renovar', [ApiCustomerController::class, 'renovarLoan']);
     });
 });

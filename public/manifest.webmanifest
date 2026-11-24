@@ -1,7 +1,7 @@
 {
   "name": "NOVAETHER™ Books, Manga & Digital Vault",
   "short_name": "NOVAETHER",
-  "description": "Librería híbrida de libros, cómics, manga y bóveda digital en Perú.",
+  "description": "Biblioteca pública y bóveda digital gratuita de libros, cómics y manga en Perú.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#090D16",

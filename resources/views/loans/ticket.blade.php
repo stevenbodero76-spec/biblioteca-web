@@ -14,13 +14,13 @@
         </button>
     </div>
 
-    @if($loan->pagoPendiente())
-        <div class="mb-4 rounded-2xl bg-amber-950/60 border border-amber-400/50 p-4 text-xs text-amber-100">
-            ⏳ <strong class="text-amber-300">PRÉSTAMO PENDIENTE DE ENTREGA:</strong> Este ejemplar quedó separado para ti. Presenta este ticket QR en biblioteca para retirar tu libro.
+    @if($loan->estado === 'devuelto')
+        <div class="mb-4 rounded-2xl bg-emerald-950/60 border border-emerald-500/50 p-4 text-xs text-emerald-100">
+            ✅ <strong>PRÉSTAMO DEVUELTO:</strong> Este ejemplar fue entregado correctamente{{ $loan->fecha_devolucion_real ? ' el ' . $loan->fecha_devolucion_real->format('d/m/Y') : '' }}.
         </div>
-    @elseif($loan->estaAnulado())
+    @elseif($loan->estaVencido())
         <div class="mb-4 rounded-2xl bg-rose-950/60 border border-rose-500/50 p-4 text-xs text-rose-100">
-            ⛔ <strong>TICKET ANULADO / EXPIRADO:</strong> Esta reserva fue cancelada y su stock regresó al catálogo.
+            ⏳ <strong>PLAZO VENCIDO:</strong> La fecha límite de devolución ya pasó. Devuelve el ejemplar o renuévalo desde Mis Préstamos.
         </div>
     @endif
 
@@ -32,9 +32,9 @@
                 <p class="text-xs font-mono text-slate-300 mt-1">Código Verificado: <strong class="text-amber-300">{{ $loan->codigoTicket() }}</strong></p>
             </div>
             <div class="text-right space-y-1">
-                <x-status-badge :estado="$loan->estaVencido() ? 'vencido' : $loan->estado" :estadoPago="$loan->estado_pago" />
-                <span class="block text-[11px] font-bold {{ $loan->estado_pago === 'pagado' ? 'text-emerald-300' : ($loan->estado_pago === 'anulado' ? 'text-rose-300' : 'text-amber-300') }}">
-                    {{ $loan->etiquetaEstadoPago() }}
+                <x-status-badge :estado="$loan->estaVencido() ? 'vencido' : $loan->estado" />
+                <span class="block text-[11px] font-bold text-emerald-300">
+                    Préstamo Gratuito Confirmado
                 </span>
             </div>
         </div>
@@ -57,9 +57,6 @@
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase text-slate-400">Modalidad</span>
                         <span class="text-xs font-bold text-white">{{ $loan->etiquetaMetodoPago() }}</span>
-                        @if($loan->codigo_operacion)
-                            <span class="block text-[10px] font-mono text-slate-300">Op: {{ $loan->codigo_operacion }}</span>
-                        @endif
                     </div>
                     <div>
                         <span class="block text-[10px] font-extrabold uppercase text-slate-400">Fecha de Salida</span>

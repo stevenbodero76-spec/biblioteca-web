@@ -76,6 +76,13 @@
             </div>
         </div>
 
+        <div>
+            <label for="observaciones" class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">4. Notas u Observaciones (Opcional)</label>
+            <textarea id="observaciones" name="observaciones" rows="2" maxlength="500"
+                      placeholder="Ej. Préstamo para lectura digital o retiro en sala..."
+                      class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-none">{{ old('observaciones') }}</textarea>
+        </div>
+
         <div class="pt-3 flex items-center justify-end gap-2 border-t border-slate-800">
             <div class="flex gap-2">
                 <a href="{{ route('loans.index') }}" class="px-4 py-2.5 rounded-xl border border-slate-700 text-xs font-bold text-slate-200 hover:bg-slate-800">Cancelar</a>

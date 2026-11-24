@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Book;
+use Illuminate\Http\Client\Pool;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -59,20 +61,29 @@ class BookLinkInterconnectorService
     public function resolverEnlacesLectura(Book $book, bool $resolverOpenLibrary = true): array
     {
         $cleanIsbn = preg_replace('/[^0-9Xx]/', '', (string) $book->isbn);
+        $hasValidIsbn = in_array(strlen($cleanIsbn), [10, 13], true);
         $queryTituloAutor = urlencode(trim($book->titulo.' '.$book->autor));
         $queryTitulo = urlencode(trim($book->titulo));
 
-        $openLibraryUrl = $cleanIsbn !== ''
+        $openLibraryUrl = $hasValidIsbn
             ? "https://openlibrary.org/isbn/{$cleanIsbn}"
             : "https://openlibrary.org/search?q={$queryTituloAutor}";
-
-        $internetArchiveUrl = "https://archive.org/details/texts?tab=collection&query={$queryTituloAutor}";
-        $gutenbergUrl = "https://www.gutenberg.org/ebooks/search/?query={$queryTitulo}";
-        $cervantesUrl = "https://www.cervantesvirtual.com/buscador/?q={$queryTitulo}";
 
         $principalUrl = trim((string) $book->archivo_pdf) !== ''
             ? (string) $book->archivo_pdf
             : $openLibraryUrl;
+
+        $archiveId = null;
+        if (preg_match('~archive\.org/(?:embed|details)/([^/?#]+)~i', $principalUrl, $archiveMatches)
+            && ! in_array($archiveMatches[1], ['texts', 'books', 'audio', 'movies'], true)) {
+            $archiveId = $archiveMatches[1];
+        }
+
+        $internetArchiveUrl = $archiveId !== null
+            ? "https://archive.org/details/{$archiveId}"
+            : "https://archive.org/details/texts?tab=collection&query={$queryTituloAutor}";
+        $gutenbergUrl = "https://www.gutenberg.org/ebooks/search/?query={$queryTitulo}";
+        $cervantesUrl = "https://www.cervantesvirtual.com/buscador/?q={$queryTitulo}";
 
         $esUrlOpenLibrary = (bool) preg_match('~^https?://(?:www\.)?openlibrary\.org/~i', $principalUrl);
         $embedUrl = ($esUrlOpenLibrary && ! $resolverOpenLibrary)
@@ -193,11 +204,11 @@ class BookLinkInterconnectorService
 
         parse_str($parsed['query'] ?? '', $queryParams);
         if (! empty($queryParams['ia']) && preg_match('/^[a-zA-Z0-9._-]+$/', (string) $queryParams['ia'])) {
-            return 'https://archive.org/embed/' . $queryParams['ia'];
+            return 'https://archive.org/embed/'.$queryParams['ia'];
         }
 
         $path = $parsed['path'] ?? '';
-        $cacheKey = 'ol_embed_url_' . md5($path . '|' . ($queryParams['q'] ?? ''));
+        $cacheKey = 'ol_embed_url_'.md5($path.'|'.($queryParams['q'] ?? ''));
 
         if (Cache::has($cacheKey)) {
             $cached = Cache::get($cacheKey);
@@ -261,7 +272,7 @@ class BookLinkInterconnectorService
                     $consultaExitosa = true;
                     foreach ($res->json('docs') ?? [] as $doc) {
                         if (! empty($doc['ia'][0]) && preg_match('/^[a-zA-Z0-9._-]+$/', (string) $doc['ia'][0])) {
-                            $embedUrl = 'https://archive.org/embed/' . $doc['ia'][0];
+                            $embedUrl = 'https://archive.org/embed/'.$doc['ia'][0];
                             break;
                         }
                     }
@@ -292,7 +303,7 @@ class BookLinkInterconnectorService
             ?? null;
 
         if (is_string($iaId) && trim($iaId) !== '' && preg_match('/^[a-zA-Z0-9._-]+$/', trim($iaId))) {
-            return 'https://archive.org/embed/' . trim($iaId);
+            return 'https://archive.org/embed/'.trim($iaId);
         }
 
         $ebooks = $payload['ebooks'] ?? [];
@@ -304,7 +315,7 @@ class BookLinkInterconnectorService
                 foreach (['read_url', 'borrow_url', 'preview_url'] as $key) {
                     $candidate = (string) ($ebook[$key] ?? '');
                     if ($candidate !== '' && preg_match('~archive\.org/(?:details|embed)/([^/?#]+)~i', $candidate, $m)) {
-                        return 'https://archive.org/embed/' . $m[1];
+                        return 'https://archive.org/embed/'.$m[1];
                     }
                 }
             }
@@ -316,7 +327,7 @@ class BookLinkInterconnectorService
     public function construirUrlLecturaPorDefecto(string $isbn, string $titulo): string
     {
         $cleanIsbn = preg_replace('/[^0-9Xx]/', '', $isbn);
-        if ($cleanIsbn !== '') {
+        if (in_array(strlen($cleanIsbn), [10, 13], true)) {
             return "https://openlibrary.org/isbn/{$cleanIsbn}";
         }
 
@@ -391,97 +402,105 @@ class BookLinkInterconnectorService
 
         $cacheKey = 'ext_search_'.md5(mb_strtolower($termino)).'_'.$limitePorFuente;
 
-        return Cache::remember($cacheKey, 3600, function () use ($termino, $limitePorFuente) {
-            $resultados = [];
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
 
-            // 1. Consulta Open Library Search API
-            try {
-                $responseOl = Http::timeout(4)
+        $resultados = [];
+        $algunaRespuestaExitosa = false;
+
+        try {
+            $responses = Http::pool(fn (Pool $pool) => [
+                $pool->as('openlibrary')
+                    ->timeout(4)
                     ->acceptJson()
                     ->get('https://openlibrary.org/search.json', [
                         'q' => $termino,
                         'limit' => $limitePorFuente,
                         'fields' => 'title,author_name,isbn,first_publish_year,cover_i,ia,key,publisher',
-                    ]);
-
-                if ($responseOl->successful()) {
-                    $docs = $responseOl->json('docs') ?? [];
-                    foreach ($docs as $doc) {
-                        $iaId = ! empty($doc['ia'][0]) ? (string) $doc['ia'][0] : null;
-                        $isbn = ! empty($doc['isbn'][0]) ? (string) $doc['isbn'][0] : null;
-                        $coverId = ! empty($doc['cover_i']) ? (int) $doc['cover_i'] : null;
-
-                        $portada = $coverId
-                            ? "https://covers.openlibrary.org/b/id/{$coverId}-M.jpg"
-                            : ($isbn ? "https://covers.openlibrary.org/b/isbn/{$isbn}-M.jpg" : null);
-
-                        $archivoPdf = $iaId
-                            ? "https://archive.org/embed/{$iaId}"
-                            : ($isbn ? "https://openlibrary.org/isbn/{$isbn}" : 'https://openlibrary.org'.($doc['key'] ?? ''));
-
-                        $autores = ! empty($doc['author_name']) ? implode(', ', (array) $doc['author_name']) : 'Autor Desconocido';
-                        $editoriales = ! empty($doc['publisher'])
-                            ? (is_array($doc['publisher']) ? implode(', ', array_slice($doc['publisher'], 0, 2)) : (string) $doc['publisher'])
-                            : 'Open Library Digital';
-
-                        $resultados[] = [
-                            'titulo' => (string) ($doc['title'] ?? 'Obra sin título'),
-                            'autor' => $autores,
-                            'editorial' => $editoriales,
-                            'anio_publicacion' => ! empty($doc['first_publish_year']) ? (int) $doc['first_publish_year'] : null,
-                            'isbn' => $isbn,
-                            'portada_url' => $portada,
-                            'archivo_pdf' => $archivoPdf,
-                            'fuente' => 'Open Library',
-                            'fuente_icono' => '📖',
-                            'es_embebible' => $iaId !== null,
-                            'sinopsis' => 'Obra disponible en la red abierta de Open Library / Internet Archive con acceso de lectura pública.',
-                        ];
-                    }
-                }
-            } catch (\Throwable) {
-                // Falla silenciosa para proteger la disponibilidad en caídas externas
-            }
-
-            // 2. Consulta Gutendex (Project Gutenberg) API
-            try {
-                $responseGuten = Http::timeout(4)
+                    ]),
+                $pool->as('gutendex')
+                    ->timeout(4)
                     ->acceptJson()
                     ->get('https://gutendex.com/books', [
                         'search' => $termino,
-                    ]);
+                    ]),
+            ]);
 
-                if ($responseGuten->successful()) {
-                    $gutenResults = array_slice($responseGuten->json('results') ?? [], 0, $limitePorFuente);
-                    foreach ($gutenResults as $item) {
-                        $formats = $item['formats'] ?? [];
-                        $htmlUrl = $formats['text/html'] ?? ($formats['text/html; charset=utf-8'] ?? null);
-                        $epubUrl = $formats['application/epub+zip'] ?? null;
-                        $coverUrl = $formats['image/jpeg'] ?? null;
+            $responseOl = $responses['openlibrary'] ?? null;
+            if ($responseOl instanceof Response && $responseOl->successful()) {
+                $algunaRespuestaExitosa = true;
+                $docs = $responseOl->json('docs') ?? [];
+                foreach ($docs as $doc) {
+                    $iaId = ! empty($doc['ia'][0]) ? (string) $doc['ia'][0] : null;
+                    $isbn = ! empty($doc['isbn'][0]) ? (string) $doc['isbn'][0] : null;
+                    $coverId = ! empty($doc['cover_i']) ? (int) $doc['cover_i'] : null;
 
-                        $urlLectura = $htmlUrl ?: ($epubUrl ?: "https://www.gutenberg.org/ebooks/{$item['id']}");
-                        $autores = collect($item['authors'] ?? [])->pluck('name')->implode(', ') ?: 'Project Gutenberg';
+                    $portada = $coverId
+                        ? "https://covers.openlibrary.org/b/id/{$coverId}-M.jpg"
+                        : ($isbn ? "https://covers.openlibrary.org/b/isbn/{$isbn}-M.jpg" : null);
 
-                        $resultados[] = [
-                            'titulo' => (string) ($item['title'] ?? 'Obra clásica'),
-                            'autor' => $autores,
-                            'editorial' => 'Project Gutenberg (Dominio Público)',
-                            'anio_publicacion' => null,
-                            'isbn' => 'PG-'.$item['id'],
-                            'portada_url' => $coverUrl,
-                            'archivo_pdf' => $urlLectura,
-                            'fuente' => 'Project Gutenberg',
-                            'fuente_icono' => '🏛️',
-                            'es_embebible' => true,
-                            'sinopsis' => 'Texto completo en dominio público distribuido libremente por el Proyecto Gutenberg.',
-                        ];
-                    }
+                    $archivoPdf = $iaId
+                        ? "https://archive.org/embed/{$iaId}"
+                        : ($isbn ? "https://openlibrary.org/isbn/{$isbn}" : 'https://openlibrary.org'.($doc['key'] ?? ''));
+
+                    $autores = ! empty($doc['author_name']) ? implode(', ', (array) $doc['author_name']) : 'Autor Desconocido';
+                    $editoriales = ! empty($doc['publisher'])
+                        ? (is_array($doc['publisher']) ? implode(', ', array_slice($doc['publisher'], 0, 2)) : (string) $doc['publisher'])
+                        : 'Open Library Digital';
+
+                    $resultados[] = [
+                        'titulo' => (string) ($doc['title'] ?? 'Obra sin título'),
+                        'autor' => $autores,
+                        'editorial' => $editoriales,
+                        'anio_publicacion' => ! empty($doc['first_publish_year']) ? (int) $doc['first_publish_year'] : null,
+                        'isbn' => $isbn,
+                        'portada_url' => $portada,
+                        'archivo_pdf' => $archivoPdf,
+                        'fuente' => 'Open Library',
+                        'fuente_icono' => '📖',
+                        'es_embebible' => $iaId !== null,
+                        'sinopsis' => 'Obra disponible en la red abierta de Open Library / Internet Archive con acceso de lectura pública.',
+                    ];
                 }
-            } catch (\Throwable) {
-                // Falla silenciosa
             }
 
-            return $resultados;
-        });
+            $responseGuten = $responses['gutendex'] ?? null;
+            if ($responseGuten instanceof Response && $responseGuten->successful()) {
+                $algunaRespuestaExitosa = true;
+                $gutenResults = array_slice($responseGuten->json('results') ?? [], 0, $limitePorFuente);
+                foreach ($gutenResults as $item) {
+                    $formats = $item['formats'] ?? [];
+                    $htmlUrl = $formats['text/html'] ?? ($formats['text/html; charset=utf-8'] ?? null);
+                    $epubUrl = $formats['application/epub+zip'] ?? null;
+                    $coverUrl = $formats['image/jpeg'] ?? null;
+
+                    $urlLectura = $htmlUrl ?: ($epubUrl ?: "https://www.gutenberg.org/ebooks/{$item['id']}");
+                    $autores = collect($item['authors'] ?? [])->pluck('name')->implode(', ') ?: 'Project Gutenberg';
+
+                    $resultados[] = [
+                        'titulo' => (string) ($item['title'] ?? 'Obra clásica'),
+                        'autor' => $autores,
+                        'editorial' => 'Project Gutenberg (Dominio Público)',
+                        'anio_publicacion' => null,
+                        'isbn' => 'PG-'.$item['id'],
+                        'portada_url' => $coverUrl,
+                        'archivo_pdf' => $urlLectura,
+                        'fuente' => 'Project Gutenberg',
+                        'fuente_icono' => '🏛️',
+                        'es_embebible' => false,
+                        'sinopsis' => 'Texto completo en dominio público distribuido libremente por el Proyecto Gutenberg.',
+                    ];
+                }
+            }
+        } catch (\Throwable) {
+            // Falla silenciosa para proteger disponibilidad si hay cortes de red externos
+        }
+
+        if ($algunaRespuestaExitosa) {
+            Cache::put($cacheKey, $resultados, 3600);
+        }
+
+        return $resultados;
     }
 }

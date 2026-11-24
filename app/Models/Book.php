@@ -6,10 +6,21 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class Book extends Model
 {
+    /**
+     * Claves de caché del catálogo y menú compartidas para invalidación centralizada.
+     */
+    public const CATALOG_CACHE_KEYS = [
+        'catalog_categories_with_count_v2',
+        'catalog_home_stats',
+        'catalog_showcase_tabs_v2',
+        'nav_categories_v2',
+    ];
+
     protected $fillable = [
         'category_id',
         'isbn',
@@ -77,12 +88,45 @@ class Book extends Model
         };
     }
 
+    /**
+     * Invalida toda la caché de estadísticas, categorías y vitrina del catálogo.
+     */
+    public static function limpiarCacheCatalogo(): void
+    {
+        foreach (self::CATALOG_CACHE_KEYS as $key) {
+            Cache::forget($key);
+        }
+    }
+
     public function prestamosActivosCount(): int
     {
         return $this->loans()
             ->whereIn('estado', ['prestado', 'vencido'])
-            ->where('estado_pago', '!=', 'anulado')
             ->count();
+    }
+
+    /**
+     * Notifica al primer lector en cola de espera si la obra cuenta con stock disponible.
+     */
+    public function notificarSiguienteEnEspera(): bool
+    {
+        if ((int) $this->stock_disponible <= 0) {
+            return false;
+        }
+
+        $siguienteEnEspera = Waitlist::where('book_id', $this->id)
+            ->where('estado', 'en_espera')
+            ->orderBy('id')
+            ->first();
+
+        if (! $siguienteEnEspera) {
+            return false;
+        }
+
+        return $siguienteEnEspera->update([
+            'estado' => 'notificado',
+            'notificado_at' => now(),
+        ]);
     }
 
     /**
@@ -103,17 +147,7 @@ class Book extends Model
             }
         }
 
-        $siguienteEnEspera = Waitlist::where('book_id', $locked->id)
-            ->where('estado', 'en_espera')
-            ->orderBy('id')
-            ->first();
-
-        if ($siguienteEnEspera && $locked->fresh()->stock_disponible > 0) {
-            $siguienteEnEspera->update([
-                'estado' => 'notificado',
-                'notificado_at' => now(),
-            ]);
-        }
+        $locked->fresh()?->notificarSiguienteEnEspera();
     }
 
     public function esPdfEmbeddable(): bool
@@ -139,6 +173,13 @@ class Book extends Model
         }
 
         return $this->archivo_pdf;
+    }
+
+    public function scopeWithVisibleRatingStats(Builder $query): Builder
+    {
+        return $query
+            ->withAvg(['reviews' => fn (Builder $q) => $q->where('visible', true)], 'rating')
+            ->withCount(['reviews' => fn (Builder $q) => $q->where('visible', true)]);
     }
 
     public function scopeFiltro(Builder $query, array $filtros): Builder

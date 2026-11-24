@@ -28,7 +28,7 @@
         </div>
     </div>
     <a href="{{ route('profile.edit') }}" class="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-slate-950 border border-slate-700 hover:border-amber-400 text-xs font-bold text-slate-200 transition">
-        {{ $miPerfilReader->etiquetaPlan() }} · Perfil →
+        {{ $miPerfilReader->etiquetaSegmento() }} · Perfil →
     </a>
 </div>
 @endif
@@ -121,9 +121,7 @@
                         @endif
                         <td class="py-3.5 px-4 text-xs">
                             <p class="font-semibold text-slate-200">{{ $loan->etiquetaMetodoPago() }}</p>
-                            <span class="text-[10px] font-bold {{ $loan->estado_pago === 'pagado' ? 'text-emerald-300' : ($loan->estado_pago === 'anulado' ? 'text-slate-400' : 'text-amber-300') }}">
-                                {{ $loan->etiquetaEstadoPago() }} {{ $loan->codigo_operacion ? '· ' . $loan->codigo_operacion : '' }}
-                            </span>
+                            <span class="text-[10px] font-bold text-emerald-300">Acceso Público Gratuito</span>
                         </td>
                         <td class="py-3.5 px-4 text-xs text-slate-300">
                             <div><strong>Salida:</strong> {{ $loan->fecha_prestamo->format('d/m/Y') }}</div>
@@ -133,7 +131,7 @@
                             @endif
                         </td>
                         <td class="py-3.5 px-4">
-                            <x-status-badge :estado="$loan->estaVencido() ? 'vencido' : $loan->estado" :estadoPago="$loan->estado_pago" />
+                            <x-status-badge :estado="$loan->estaVencido() ? 'vencido' : $loan->estado" />
                         </td>
                         <td class="py-3.5 px-4 text-right">
                             <div class="inline-flex items-center gap-1.5 flex-wrap justify-end">
@@ -142,8 +140,16 @@
                                     🎫 QR
                                 </a>
 
-                                @if(auth()->user()->esAdmin() && $loan->estado !== 'devuelto' && ! $loan->estaAnulado())
-                                    <form action="{{ route('loans.devolver', $loan) }}" method="POST" class="inline">
+                                @if($loan->estado !== 'devuelto' && auth()->user()->can('renew', $loan))
+                                    <form action="{{ route('loans.renovar', $loan) }}" method="POST" class="inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" class="bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/50 text-sky-200 text-xs font-extrabold px-2.5 py-1.5 rounded-lg transition" title="Extender plazo +7 días">🔄 +7d</button>
+                                    </form>
+                                @endif
+
+                                @if($loan->estado !== 'devuelto' && auth()->user()->can('returnBook', $loan))
+                                    <form action="{{ auth()->user()->esAdmin() ? route('loans.devolver', $loan) : route('loans.devolver-digital', $loan) }}" method="POST" class="inline">
                                         @csrf
                                         @method('PATCH')
                                         <button type="submit" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold px-2.5 py-1.5 rounded-lg shadow transition">✅ Devolver</button>
@@ -163,7 +169,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="py-8 text-center text-slate-300">No se encontraron reservas o préstamos registrados.</td>
+                        <td colspan="{{ auth()->user()->esAdmin() ? 7 : 6 }}" class="py-8 text-center text-slate-300">No se encontraron reservas o préstamos registrados.</td>
                     </tr>
                 @endforelse
             </tbody>

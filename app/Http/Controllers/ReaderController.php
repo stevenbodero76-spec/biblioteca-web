@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\RegisterReaderUserAction;
 use App\Http\Requests\ReaderRequest;
-use App\Models\KarmaMovement;
 use App\Models\Reader;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +21,7 @@ class ReaderController extends Controller
 
         $readers = Reader::with('user')
             ->withCount([
-                'loans as prestamos_activos_count' => fn ($q) => $q->whereIn('estado', ['prestado', 'vencido'])->where('estado_pago', '!=', 'anulado'),
+                'loans as prestamos_activos_count' => fn ($q) => $q->whereIn('estado', ['prestado', 'vencido']),
             ])
             ->filtro($filtros)
             ->orderBy('apellidos')
@@ -36,39 +36,18 @@ class ReaderController extends Controller
         return view('readers.create');
     }
 
-    public function store(ReaderRequest $request): RedirectResponse
+    public function store(ReaderRequest $request, RegisterReaderUserAction $registerAction): RedirectResponse
     {
         $datos = $request->validated();
         $clavePlana = trim((string) ($datos['password'] ?? '')) ?: Str::random(10);
 
-        DB::transaction(function () use ($datos, $clavePlana) {
-            $user = User::create([
-                'name' => trim($datos['nombres'].' '.$datos['apellidos']),
-                'email' => $datos['email'],
-                'rol' => 'cliente',
-                'password' => Hash::make($clavePlana),
-            ]);
-
-            $reader = Reader::create([
-                'user_id' => $user->id,
-                'dni_codigo' => $datos['dni_codigo'] ?? null,
-                'nombres' => $datos['nombres'],
-                'apellidos' => $datos['apellidos'],
-                'email' => $datos['email'],
-                'telefono' => $datos['telefono'] ?? null,
-                'tipo' => $datos['tipo'],
-                'estado' => $datos['estado'],
-                'puntos_karma' => 50,
-            ]);
-
-            KarmaMovement::create([
-                'reader_id' => $reader->id,
-                'puntos' => 50,
-                'motivo' => 'Registro inicial de cliente por administración',
-                'referencia_tipo' => 'admin_create',
-                'referencia_id' => $user->id,
-            ]);
-        });
+        $registerAction->execute(
+            [...$datos, 'password' => $clavePlana],
+            $datos['tipo'],
+            $datos['estado'],
+            'Registro inicial de cliente por administración',
+            'admin_create'
+        );
 
         $infoClave = empty($datos['password'])
             ? " Acceso web creado con clave temporal: {$clavePlana}"

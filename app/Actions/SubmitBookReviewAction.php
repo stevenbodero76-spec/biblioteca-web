@@ -45,6 +45,8 @@ class SubmitBookReviewAction
             }
         }
 
+        Book::limpiarCacheCatalogo();
+
         return [
             'review' => $review,
             'karma_awarded' => $karmaOtorgado,

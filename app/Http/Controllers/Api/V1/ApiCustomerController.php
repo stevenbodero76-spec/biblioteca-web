@@ -3,15 +3,20 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\CreateLoanAction;
+use App\Actions\RenewLoanAction;
+use App\Actions\ReturnLoanAction;
 use App\Actions\SubmitBookReviewAction;
 use App\Http\Controllers\Controller;
 use App\Models\Book;
 use App\Models\Favorite;
 use App\Models\Loan;
+use App\Models\Review;
 use App\Models\Waitlist;
+use App\Services\BookLinkInterconnectorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class ApiCustomerController extends Controller
@@ -32,7 +37,8 @@ class ApiCustomerController extends Controller
                 'id' => $reader->id,
                 'dni_codigo' => $reader->dni_codigo,
                 'telefono' => $reader->telefono,
-                'etiqueta_plan' => $reader->etiquetaPlan(),
+                'categoria_lector' => $reader->etiquetaSegmento(),
+                'etiqueta_plan' => $reader->etiquetaSegmento(),
                 'puntos_karma' => $reader->puntos_karma,
                 'nivel_karma' => $reader->nivelKarma(),
                 'estado' => $reader->estado,
@@ -82,11 +88,39 @@ class ApiCustomerController extends Controller
         ]);
     }
 
-    public function favorites(Request $request): JsonResponse
+    public function favorites(Request $request, BookLinkInterconnectorService $interconnector): JsonResponse
     {
-        $books = $request->user()->favoriteBooks()->with('category')->get();
+        $books = $request->user()
+            ->favoriteBooks()
+            ->with('category')
+            ->withVisibleRatingStats()
+            ->orderByDesc('favorites.created_at')
+            ->get()
+            ->map(function (Book $book) use ($interconnector) {
+                $enlaces = $interconnector->resolverEnlacesLectura($book, false);
+                $book->setAttribute('enlace_lectura_directa', $enlaces['principal_url']);
+
+                return $book;
+            });
 
         return response()->json(['data' => $books]);
+    }
+
+    public function waitlists(Request $request): JsonResponse
+    {
+        $reader = $request->user()->reader;
+
+        if (! $reader) {
+            return response()->json(['data' => []]);
+        }
+
+        $waitlists = $reader->waitlists()
+            ->with('book.category')
+            ->whereIn('estado', ['en_espera', 'notificado'])
+            ->latest()
+            ->get();
+
+        return response()->json(['data' => $waitlists]);
     }
 
     public function toggleFavorite(Request $request, Book $book): JsonResponse
@@ -169,6 +203,19 @@ class ApiCustomerController extends Controller
         ], 201);
     }
 
+    public function destroyReview(Request $request, Review $review): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user->esAdmin() && (int) $review->user_id !== (int) $user->id) {
+            return response()->json(['message' => 'No autorizado para eliminar esta reseña.'], 403);
+        }
+
+        $review->delete();
+        Book::limpiarCacheCatalogo();
+
+        return response()->json(['message' => 'Reseña eliminada correctamente.']);
+    }
+
     public function loans(Request $request): JsonResponse
     {
         $loans = Loan::with('book.category')
@@ -190,8 +237,7 @@ class ApiCustomerController extends Controller
         $datos = $request->validate([
             'book_id' => ['required', 'integer', 'exists:books,id'],
             'duracion_dias' => ['nullable', 'integer', 'in:7,14,30'],
-            'metodo_pago' => ['nullable', 'in:gratuito,membresia,yape_plin,mostrador'],
-            'codigo_operacion' => ['nullable', 'string', 'max:60'],
+            'observaciones' => ['nullable', 'string', 'max:500'],
         ]);
 
         $user = $request->user();
@@ -206,8 +252,7 @@ class ApiCustomerController extends Controller
             'reader_id' => $user->reader->id,
             'fecha_prestamo' => now()->toDateString(),
             'fecha_devolucion_esperada' => now()->addDays($duracion)->toDateString(),
-            'metodo_pago' => $datos['metodo_pago'] ?? 'gratuito',
-            'codigo_operacion' => $datos['codigo_operacion'] ?? null,
+            'observaciones' => $datos['observaciones'] ?? null,
         ], $user);
 
         return response()->json([
@@ -215,5 +260,36 @@ class ApiCustomerController extends Controller
             'codigo_ticket' => $loan->codigoTicket(),
             'data' => $loan->load('book'),
         ], 201);
+    }
+
+    public function devolverLoan(Request $request, Loan $loan, ReturnLoanAction $action): JsonResponse
+    {
+        if (Gate::denies('returnBook', $loan)) {
+            return response()->json(['message' => 'No autorizado para devolver este préstamo desde este perfil.'], 403);
+        }
+
+        if (! $action->execute($loan, $request->user())) {
+            return response()->json(['message' => 'Este préstamo ya fue devuelto anteriormente.'], 422);
+        }
+
+        return response()->json([
+            'message' => 'Devolución registrada y stock actualizado.',
+            'karma_awarded' => $action->lastKarmaAwarded,
+            'data' => $loan->fresh('book'),
+        ]);
+    }
+
+    public function renovarLoan(Loan $loan, RenewLoanAction $action): JsonResponse
+    {
+        if (Gate::denies('renew', $loan)) {
+            return response()->json(['message' => 'No autorizado para renovar este préstamo.'], 403);
+        }
+
+        $renovado = $action->execute($loan);
+
+        return response()->json([
+            'message' => 'Préstamo renovado correctamente.',
+            'data' => $renovado,
+        ]);
     }
 }

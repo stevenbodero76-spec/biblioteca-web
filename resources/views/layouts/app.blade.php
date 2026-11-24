@@ -16,7 +16,48 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="text-slate-100 min-h-screen flex flex-col selection:bg-amber-400 selection:text-slate-950">
+@php
+    $esPanelAdmin = auth()->check()
+        && auth()->user()->esAdmin()
+        && request()->routeIs('dashboard', 'admin.*', 'books.create', 'books.edit', 'readers.*', 'loans.*', 'profile.*');
+@endphp
 
+@if($esPanelAdmin)
+    <div class="flex flex-1 min-h-screen">
+        @include('layouts.partials.admin-sidebar')
+
+        <div class="flex-1 min-w-0 flex flex-col">
+            <!-- Barra superior compacta dentro del Panel Admin -->
+            <header class="no-print bg-[#090D16]/95 backdrop-blur-xl text-white sticky top-0 z-40 border-b border-slate-800 shadow-lg">
+                <div class="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <button type="button"
+                                onclick="const sb = document.getElementById('admin-control-sidebar'); const closing = !sb.classList.contains('hidden'); sb.classList.toggle('hidden', closing); sb.classList.toggle('flex', !closing); sb.classList.toggle('fixed', !closing); sb.classList.toggle('inset-y-0', !closing); sb.classList.toggle('left-0', !closing); sb.classList.toggle('z-50', !closing);"
+                                class="lg:hidden p-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 hover:text-white"
+                                aria-label="Abrir menú lateral admin">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
+                        <div class="min-w-0">
+                            <p class="text-xs font-extrabold text-amber-400 uppercase tracking-wider truncate">Panel Administrativo NOVAETHER™</p>
+                            <p class="text-[11px] text-slate-300 truncate">{{ auth()->user()->name }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 shrink-0">
+                        <a href="{{ route('books.index') }}"
+                           class="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-amber-300 text-xs font-bold px-3.5 py-2 rounded-xl transition">
+                            🌐 Catálogo
+                        </a>
+                        <a href="{{ route('books.create') }}"
+                           class="hidden sm:inline-flex items-center gap-1 bg-linear-to-r from-amber-400 to-orange-500 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl shadow transition">
+                            ➕ Subir Libro
+                        </a>
+                    </div>
+                </div>
+            </header>
+@else
     <!-- Cintillo superior -->
     <div class="no-print bg-linear-to-r from-amber-500 via-amber-400 to-orange-500 text-slate-950 text-xs font-extrabold py-2 px-4 text-center tracking-wide shadow-sm">
         Biblioteca Pública &amp; Bóveda Digital 100% Gratuita
@@ -93,10 +134,12 @@
                         @auth
                             <span class="h-4 w-px bg-slate-700 mx-1"></span>
 
-                            <a href="{{ route('favorites.index') }}"
-                               class="px-2.5 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request()->routeIs('favorites.*') ? 'bg-rose-500 text-white font-extrabold' : 'text-rose-300 hover:bg-slate-800' }}">
-                                Estantería
-                            </a>
+                            @if(auth()->user()->esCliente())
+                                <a href="{{ route('favorites.index') }}"
+                                   class="px-2.5 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request()->routeIs('favorites.*') ? 'bg-rose-500 text-white font-extrabold' : 'text-rose-300 hover:bg-slate-800' }}">
+                                    Estantería
+                                </a>
+                            @endif
 
                             <a href="{{ route('loans.index') }}"
                                class="px-2.5 py-2 rounded-xl text-xs font-bold tracking-wide transition {{ request()->routeIs('loans.*') ? 'bg-amber-400 text-slate-950 font-extrabold' : 'text-amber-300 hover:bg-slate-800' }}">
@@ -107,13 +150,16 @@
                                 <div class="relative group">
                                     <button type="button"
                                             onclick="document.getElementById('nav-admin-dropdown').classList.toggle('hidden')"
-                                            class="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-extrabold tracking-wide transition {{ request()->routeIs('dashboard', 'readers.*', 'admin.*') ? 'bg-emerald-500 text-slate-950' : 'text-emerald-300 hover:bg-slate-800' }}">
+                                            class="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-extrabold tracking-wide transition {{ request()->routeIs('dashboard', 'readers.*', 'admin.*', 'books.create', 'books.edit') ? 'bg-emerald-500 text-slate-950' : 'text-emerald-300 hover:bg-slate-800' }}">
                                         <span>Admin</span>
                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
                                     </button>
-                                    <div id="nav-admin-dropdown" class="absolute right-0 top-full pt-2 w-56 hidden group-hover:block z-50">
+                                    <div id="nav-admin-dropdown" class="absolute right-0 top-full pt-2 w-60 hidden group-hover:block z-50">
                                         <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 space-y-0.5">
                                             <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-emerald-300">📊 Dashboard Ejecutivo</a>
+                                            <a href="{{ route('admin.books.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-emerald-300">📚 Gestionar Libros</a>
+                                            <a href="{{ route('books.create') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-300">➕ Subir / Publicar Libro</a>
+                                            <a href="{{ route('admin.categories.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-emerald-300">🗂️ Gestionar Categorías</a>
                                             <a href="{{ route('readers.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-emerald-300">👥 Directorio de Lectores</a>
                                             <a href="{{ route('admin.complaints.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-300">📖 Reclamaciones</a>
                                             <a href="{{ route('admin.waitlists.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-amber-300">🔔 Listas de Espera</a>
@@ -151,12 +197,8 @@
                         </form>
                     @else
                         <a href="{{ route('login') }}"
-                           class="bg-slate-900 hover:bg-slate-800 text-slate-100 border border-slate-700 text-xs font-bold px-4 py-2 rounded-xl transition">
+                           class="bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2 rounded-xl shadow-lg shadow-amber-500/20 transition">
                             Iniciar Sesión
-                        </a>
-                        <a href="{{ route('register') }}"
-                           class="hidden sm:inline-block bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2 rounded-xl shadow-lg shadow-amber-500/20 transition">
-                            Crear Cuenta
                         </a>
                     @endauth
 
@@ -186,12 +228,17 @@
                 </details>
                 <a href="{{ route('books.index', ['formato' => 'digital']) }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800">Edición Digital</a>
                 @auth
-                    <a href="{{ route('favorites.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-rose-300 hover:bg-slate-800">❤️ Mi Estantería</a>
-                    <a href="{{ route('loans.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">🎫 Tickets QR y Reservas</a>
+                    @if(auth()->user()->esCliente())
+                        <a href="{{ route('favorites.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-rose-300 hover:bg-slate-800">❤️ Mi Estantería</a>
+                    @endif
+                    <a href="{{ route('loans.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">{{ auth()->user()->esCliente() ? '🎫 Tickets QR y Reservas' : '🎫 Préstamos' }}</a>
                     <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800">👤 Mi Perfil y Karma</a>
                     @if(auth()->user()->esAdmin())
                         <div class="pt-2 mt-2 border-t border-slate-800 space-y-1">
                             <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-emerald-300 hover:bg-slate-800">📊 Panel Ejecutivo Admin</a>
+                            <a href="{{ route('admin.books.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-emerald-300 hover:bg-slate-800">📚 Gestionar Libros</a>
+                            <a href="{{ route('books.create') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">➕ Subir / Publicar Libro</a>
+                            <a href="{{ route('admin.categories.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-emerald-300 hover:bg-slate-800">🗂️ Gestionar Categorías</a>
                             <a href="{{ route('readers.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-emerald-300 hover:bg-slate-800">👥 Directorio de Lectores</a>
                             <a href="{{ route('admin.complaints.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">📖 Reclamaciones</a>
                             <a href="{{ route('admin.waitlists.index') }}" class="block px-3 py-2 rounded-xl text-xs font-bold text-amber-300 hover:bg-slate-800">🔔 Listas de Espera</a>
@@ -199,11 +246,12 @@
                         </div>
                     @endif
                 @else
-                    <a href="{{ route('register') }}" class="block px-3 py-2 rounded-xl text-xs font-black text-amber-400 hover:bg-slate-800">Crear Cuenta Gratis</a>
+                    <a href="{{ route('login') }}" class="block px-3 py-2 rounded-xl text-xs font-black text-amber-400 hover:bg-slate-800">Iniciar Sesión</a>
                 @endauth
             </div>
         </div>
     </header>
+@endif
 
     <!-- Notificación automática de Lista de Espera -->
     @if(isset($notificacionesEspera) && $notificacionesEspera->isNotEmpty())
@@ -281,16 +329,28 @@
         </div>
     </footer>
 
+@if($esPanelAdmin)
+        </div>
+    </div>
+@endif
+
     <!-- Barra Inferior Táctil App / WebView (Solo Móvil) -->
     <nav class="no-print md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#090D16]/95 backdrop-blur-xl border-t border-slate-800 px-2 py-1.5 grid grid-cols-4 text-[10px] font-bold" aria-label="Menú inferior móvil">
         <a href="{{ route('books.index') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('home', 'books.index') ? 'text-amber-400' : 'text-slate-300' }}">
             <span class="text-base leading-none mb-0.5">📚</span>
             <span>Catálogo</span>
         </a>
-        <a href="{{ auth()->check() ? route('favorites.index') : route('login') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('favorites.*') ? 'text-rose-400' : 'text-slate-300' }}">
-            <span class="text-base leading-none mb-0.5">❤️</span>
-            <span>Estantería</span>
-        </a>
+        @if(auth()->check() && auth()->user()->esAdmin())
+            <a href="{{ route('admin.books.index') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('admin.books.*', 'books.create', 'books.edit') ? 'text-emerald-400' : 'text-slate-300' }}">
+                <span class="text-base leading-none mb-0.5">🗂️</span>
+                <span>Libros</span>
+            </a>
+        @else
+            <a href="{{ auth()->check() ? route('favorites.index') : route('login') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('favorites.*') ? 'text-rose-400' : 'text-slate-300' }}">
+                <span class="text-base leading-none mb-0.5">❤️</span>
+                <span>Estantería</span>
+            </a>
+        @endif
         <a href="{{ auth()->check() ? route('loans.index') : route('login') }}" class="flex flex-col items-center justify-center py-1 rounded-xl {{ request()->routeIs('loans.*') ? 'text-amber-400' : 'text-slate-300' }}">
             <span class="text-base leading-none mb-0.5">🎫</span>
             <span>{{ auth()->check() && auth()->user()->esCliente() ? 'Tickets' : 'Préstamos' }}</span>

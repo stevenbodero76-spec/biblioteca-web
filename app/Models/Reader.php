@@ -58,17 +58,12 @@ class Reader extends Model
     {
         return $this->loans()
             ->whereIn('estado', ['prestado', 'vencido'])
-            ->where('estado_pago', '!=', 'anulado')
             ->count();
     }
 
     public function etiquetaPlan(): string
     {
-        return match ($this->tipo) {
-            'estudiante' => 'Estudiante',
-            'docente' => 'Docente',
-            default => 'Lector Público',
-        };
+        return $this->etiquetaSegmento();
     }
 
     public function etiquetaSegmento(): string

@@ -9,7 +9,10 @@
             <h1 class="text-2xl font-extrabold text-white">➕ Publicar Nuevo Libro, Cómic o Manga</h1>
             <p class="text-sm text-slate-300">Autocompletado por ISBN + carga local de portadas y archivos PDF.</p>
         </div>
-        <a href="{{ route('books.index') }}" class="text-xs font-extrabold uppercase text-amber-400 hover:underline">← Volver al catálogo</a>
+        <div class="flex flex-wrap items-center gap-3">
+            <a href="{{ route('admin.books.index') }}" class="text-xs font-extrabold uppercase text-emerald-300 hover:underline">📚 Gestión de Libros</a>
+            <a href="{{ route('books.index') }}" class="text-xs font-extrabold uppercase text-amber-400 hover:underline">← Catálogo</a>
+        </div>
     </div>
 
     <form action="{{ route('books.store') }}" method="POST" enctype="multipart/form-data" class="bg-slate-900/95 rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-2xl space-y-5">
@@ -52,21 +55,19 @@
             </div>
 
             <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Idioma</label>
-                <select name="idioma" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
-                    <option value="">Sin especificar</option>
-                    <option value="es" @selected(old('idioma') === 'es')>🇪🇸 Español</option>
+                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Idioma *</label>
+                <select name="idioma" required class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
+                    <option value="es" @selected(old('idioma', 'es') === 'es')>🇪🇸 Español</option>
                     <option value="en" @selected(old('idioma') === 'en')>🇬🇧 Inglés</option>
                 </select>
             </div>
 
             <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Licencia de lectura</label>
-                <select name="licencia" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
-                    <option value="">Sin especificar</option>
+                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Licencia de lectura *</label>
+                <select name="licencia" required class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
+                    <option value="acceso_abierto" @selected(old('licencia', 'acceso_abierto') === 'acceso_abierto')>Acceso Abierto</option>
                     <option value="dominio_publico" @selected(old('licencia') === 'dominio_publico')>Dominio Público</option>
                     <option value="creative_commons" @selected(old('licencia') === 'creative_commons')>Creative Commons</option>
-                    <option value="acceso_abierto" @selected(old('licencia') === 'acceso_abierto')>Acceso Abierto</option>
                 </select>
             </div>
 
@@ -134,7 +135,7 @@
 
             <div>
                 <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">O Enlace Digital Externo</label>
-                <input type="text" name="archivo_pdf" value="{{ old('archivo_pdf') }}" placeholder="https://..."
+                <input type="text" id="archivo_pdf" name="archivo_pdf" value="{{ old('archivo_pdf') }}" placeholder="https://..."
                        class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder-slate-400 focus:border-amber-400 focus:outline-none">
             </div>
 
@@ -190,6 +191,9 @@ document.getElementById('btn-isbn-lookup').addEventListener('click', async () =>
         if (data.editorial) document.getElementById('editorial').value = data.editorial;
         if (data.anio_publicacion) document.getElementById('anio_publicacion').value = data.anio_publicacion;
         if (data.portada_url) document.getElementById('portada_url').value = data.portada_url;
+        if (data.archivo_pdf && !document.getElementById('archivo_pdf').value) {
+            document.getElementById('archivo_pdf').value = data.archivo_pdf;
+        }
         if (data.sinopsis && !document.getElementById('sinopsis').value) {
             document.getElementById('sinopsis').value = data.sinopsis;
         }

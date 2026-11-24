@@ -96,7 +96,7 @@ class Rol2ExternalBookSearchTest extends TestCase
     public function test_admin_can_import_external_book_in_one_click(): void
     {
         $admin = User::factory()->create(['rol' => 'admin']);
-        $categoria = Category::create(['nombre' => 'Clásicos Universales', 'icono' => '🏛️', 'slug' => 'clasicos']);
+        $categoria = Category::create(['nombre' => 'Clásicos Universales', 'icono' => '🏛️']);
 
         $response = $this->actingAs($admin)->post('/books/importar-externo', [
             'titulo' => 'Sherlock Holmes: Estudio en Escarlata',
@@ -153,7 +153,7 @@ class Rol2ExternalBookSearchTest extends TestCase
             ], 200),
         ]);
 
-        $service = new BookLinkInterconnectorService();
+        $service = new BookLinkInterconnectorService;
 
         $this->assertSame(
             'https://archive.org/embed/nineteeneightyfo00orwe_8',
@@ -168,7 +168,7 @@ class Rol2ExternalBookSearchTest extends TestCase
             $service->convertirAEmbedUrl('https://openlibrary.org/works/OL1168083W')
         );
 
-        $categoria = Category::create(['nombre' => 'Distopía', 'icono' => '📖', 'slug' => 'distopia']);
+        $categoria = Category::create(['nombre' => 'Distopía', 'icono' => '📖']);
         $book = Book::create([
             'category_id' => $categoria->id,
             'isbn' => '978-0451524935',
@@ -182,15 +182,44 @@ class Rol2ExternalBookSearchTest extends TestCase
             'stock_disponible' => 5,
         ]);
 
-        $response = $this->get(route('books.show', $book));
+        // Visitante sin sesión no debe ver el iframe embebido ni acceder directo a la Sala de Lectura
+        $this->get(route('books.read', $book))->assertRedirect(route('login'));
+        $this->get(route('books.show', $book))
+            ->assertStatus(200)
+            ->assertDontSee('<iframe', false);
+
+        $lector = User::factory()->create(['rol' => 'cliente']);
+
+        $response = $this->actingAs($lector)->get(route('books.show', $book));
         $response->assertStatus(200);
         $response->assertSee('https://archive.org/embed/nineteeneightyfo00orwe_8');
         $response->assertSee('<iframe', false);
+
+        $this->actingAs($lector)
+            ->get(route('books.read', $book))
+            ->assertStatus(200)
+            ->assertSee('https://archive.org/embed/nineteeneightyfo00orwe_8')
+            ->assertSee('<iframe', false);
+
+        // Los códigos internos no ISBN (ej. PD-LIT-1605) no deben generar /isbn/1605 inválido
+        $bookPd = Book::create([
+            'category_id' => $categoria->id,
+            'isbn' => 'PD-LIT-1605',
+            'titulo' => 'Don Quijote',
+            'autor' => 'Miguel de Cervantes',
+            'formato' => 'digital',
+            'archivo_pdf' => 'https://archive.org/embed/elingeniosohidal00cervuoft',
+            'stock_total' => 2,
+            'stock_disponible' => 2,
+        ]);
+        $enlacesPd = $service->resolverEnlacesLectura($bookPd, false);
+        $this->assertStringStartsWith('https://openlibrary.org/search?q=', $enlacesPd['fuentes'][0]['url']);
+        $this->assertSame('https://archive.org/details/elingeniosohidal00cervuoft', $enlacesPd['fuentes'][1]['url']);
     }
 
     public function test_catalog_and_api_filter_books_by_idioma_and_licencia(): void
     {
-        $categoria = Category::create(['nombre' => 'Idiomas', 'icono' => '🌍', 'slug' => 'idiomas']);
+        $categoria = Category::create(['nombre' => 'Idiomas', 'icono' => '🌍']);
 
         $libroIngles = Book::create([
             'category_id' => $categoria->id,

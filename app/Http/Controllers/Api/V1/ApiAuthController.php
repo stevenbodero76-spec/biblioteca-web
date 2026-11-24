@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\RegisterReaderUserAction;
 use App\Http\Controllers\Controller;
-use App\Models\KarmaMovement;
-use App\Models\Reader;
+use App\Http\Requests\ReaderRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class ApiAuthController extends Controller
@@ -53,48 +52,27 @@ class ApiAuthController extends Controller
         ]);
     }
 
-    public function register(Request $request): JsonResponse
+    public function register(Request $request, RegisterReaderUserAction $registerAction): JsonResponse
     {
+        $identity = ReaderRequest::identityRules(true);
+
         $datos = $request->validate([
-            'nombres' => ['required', 'string', 'max:100'],
-            'apellidos' => ['required', 'string', 'max:100'],
-            'dni_codigo' => ['nullable', 'string', 'max:20', 'unique:readers,dni_codigo'],
-            'telefono' => ['nullable', 'string', 'max:20'],
+            'nombres' => $identity['nombres'],
+            'apellidos' => $identity['apellidos'],
+            'dni_codigo' => [...$identity['dni_codigo'], 'unique:readers,dni_codigo'],
+            'telefono' => $identity['telefono'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email', 'unique:readers,email'],
             'password' => ['required', 'string', 'min:6'],
             'device_name' => ['nullable', 'string', 'max:100'],
-        ]);
+        ], ReaderRequest::identityMessages());
 
-        $user = DB::transaction(function () use ($datos) {
-            $nuevo = User::create([
-                'name' => trim($datos['nombres'].' '.$datos['apellidos']),
-                'email' => $datos['email'],
-                'rol' => 'cliente',
-                'password' => Hash::make($datos['password']),
-            ]);
-
-            $reader = Reader::create([
-                'user_id' => $nuevo->id,
-                'dni_codigo' => $datos['dni_codigo'] ?? null,
-                'nombres' => $datos['nombres'],
-                'apellidos' => $datos['apellidos'],
-                'email' => $datos['email'],
-                'telefono' => $datos['telefono'] ?? null,
-                'tipo' => 'publico',
-                'estado' => 'activo',
-                'puntos_karma' => 50,
-            ]);
-
-            KarmaMovement::create([
-                'reader_id' => $reader->id,
-                'puntos' => 50,
-                'motivo' => 'Bono de bienvenida NOVAETHER™ Móvil',
-                'referencia_tipo' => 'api_register',
-                'referencia_id' => $nuevo->id,
-            ]);
-
-            return $nuevo->load('reader');
-        });
+        $user = $registerAction->execute(
+            $datos,
+            'publico',
+            'activo',
+            'Bono de bienvenida NOVAETHER™ Móvil',
+            'api_register'
+        );
 
         return response()->json([
             'token' => $user->createApiToken($datos['device_name'] ?? 'mobile-app'),

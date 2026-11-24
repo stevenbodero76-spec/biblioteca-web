@@ -111,7 +111,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 5b. Saneamiento en vivo de campos por tipo (solo letras vs solo dígitos)
+    document.addEventListener('input', (e) => {
+        const target = e.target;
+        if (!(target instanceof HTMLInputElement)) return;
+
+        if (target.dataset.inputMode === 'digits') {
+            const cleaned = target.value.replace(/[^0-9]/g, '');
+            if (cleaned !== target.value) target.value = cleaned;
+        } else if (target.dataset.inputMode === 'letters') {
+            const cleaned = target.value.replace(/[^\p{L}\s.'-]/gu, '');
+            if (cleaned !== target.value) target.value = cleaned;
+        }
+    });
+
     // 6. Filtros y búsqueda en vivo en el Catálogo
+    const heroSearchInput = document.getElementById('hero-search-input');
     const searchInput = document.getElementById('live-search-input');
     const catInput = document.getElementById('live-category-input');
     const ordenSelect = document.getElementById('live-orden-select');
@@ -120,6 +135,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const licenciaSelect = document.getElementById('live-licencia-select');
     const stockSelect = document.getElementById('live-stock-select');
     const resetBtn = document.getElementById('live-reset-btn');
+    const toggleAdvBtn = document.getElementById('toggle-advanced-filters');
+    const advPanel = document.getElementById('advanced-filters-panel');
+
+    if (toggleAdvBtn && advPanel) {
+        toggleAdvBtn.addEventListener('click', () => {
+            const hidden = advPanel.classList.contains('hidden');
+            advPanel.classList.toggle('hidden', !hidden);
+            advPanel.classList.toggle('grid', hidden);
+        });
+    }
 
     if (filterForm && document.getElementById('books-grid-container')) {
         let debounceTimer = null;
@@ -139,7 +164,16 @@ document.addEventListener('DOMContentLoaded', () => {
             ejecutarFiltroVivo();
         });
 
+        heroSearchInput?.addEventListener('input', () => {
+            if (searchInput) searchInput.value = heroSearchInput.value;
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(ejecutarFiltroVivo, 280);
+        });
+
         searchInput?.addEventListener('input', () => {
+            if (heroSearchInput && heroSearchInput.value !== searchInput.value) {
+                heroSearchInput.value = searchInput.value;
+            }
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(ejecutarFiltroVivo, 280);
         });
@@ -168,6 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         resetBtn?.addEventListener('click', () => {
+            if (heroSearchInput) heroSearchInput.value = '';
             if (searchInput) searchInput.value = '';
             if (catInput) catInput.value = '';
             if (ordenSelect) ordenSelect.value = '';
@@ -180,6 +215,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         window.aplicarFiltroStock = (estado) => {
             if (stockSelect) stockSelect.value = estado;
+            if (advPanel) {
+                advPanel.classList.remove('hidden');
+                advPanel.classList.add('grid');
+            }
             ejecutarFiltroVivo();
             document.getElementById('catalogo-resultados')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         };
@@ -267,7 +306,8 @@ function abrirQuickView(book) {
 
     const readLink = document.getElementById('qv-read-link');
     readLink.href = book.read_url || book.show_url || '#';
-    readLink.textContent = '📖 Leer / Abrir';
+    readLink.removeAttribute('target');
+    readLink.textContent = book.requires_auth ? '🔒 Inicia sesión para leer' : '📖 Abrir Sala de Lectura';
 
     document.getElementById('qv-show-link').href = book.show_url || '#';
 

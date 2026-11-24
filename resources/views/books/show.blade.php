@@ -5,7 +5,7 @@
 @section('meta')
     <meta property="og:type" content="book">
     <meta property="og:title" content="{{ $book->titulo }} — {{ $book->autor }} | NOVAETHER™">
-    <meta property="og:description" content="{{ \Illuminate\Support\Str::limit($book->sinopsis ?? 'Disponible en NOVAETHER™ Store & Digital Vault.', 150) }}">
+    <meta property="og:description" content="{{ \Illuminate\Support\Str::limit($book->sinopsis ?? 'Disponible en la Biblioteca Pública y Bóveda Digital NOVAETHER™.', 150) }}">
     @if($book->portada_url)
         <meta property="og:image" content="{{ $book->portada_url }}">
     @endif
@@ -57,7 +57,7 @@
                 </span>
                 <p class="text-xs text-slate-300 font-mono">ISBN: {{ $book->isbn }}</p>
                 <span class="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                    🛡️ Sello Mint Condition · Stock Verificado
+                    🛡️ Edición Verificada · Lectura Abierta
                 </span>
             </div>
         </div>
@@ -149,17 +149,17 @@
             <!-- Lectura y préstamo como acciones principales -->
             <div class="mt-6 pt-5 border-t border-slate-800 space-y-3">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    @if($book->archivo_pdf)
-                        <a href="#visor-virtual"
+                    @auth
+                        <a href="{{ route('books.read', $book) }}"
                            class="inline-flex items-center justify-center gap-2 bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm px-5 py-3 rounded-xl shadow-lg shadow-amber-500/20 transition">
-                            📖 Leer Obra Completa Ahora
+                            🖥️ Abrir Sala de Lectura Completa
                         </a>
                     @else
-                        <a href="#visor-virtual"
+                        <a href="{{ route('books.read', $book) }}"
                            class="inline-flex items-center justify-center gap-2 bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm px-5 py-3 rounded-xl shadow-lg shadow-amber-500/20 transition">
-                            📖 Ver Muestra de Lectura
+                            🔒 Inicia sesión para Leer Obra Completa
                         </a>
-                    @endif
+                    @endauth
 
                     @if($book->estaDisponible())
                         <a href="{{ route('loans.create', ['book_id' => $book->id]) }}"
@@ -170,10 +170,21 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 pt-1">
-                    <a href="{{ route('books.download', $book) }}"
-                       class="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 text-xs font-bold px-3.5 py-2 rounded-xl transition">
-                        ⬇️ Acceso / Descarga Digital Gratuita
-                    </a>
+                    @auth
+                        <a href="#visor-virtual"
+                           class="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 text-xs font-bold px-3.5 py-2 rounded-xl transition">
+                            📖 Ver Visor Embebido Aquí
+                        </a>
+                        <a href="{{ route('books.download', $book) }}"
+                           class="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 text-xs font-bold px-3.5 py-2 rounded-xl transition">
+                            ⬇️ Acceso / Descarga Digital Gratuita
+                        </a>
+                    @else
+                        <a href="{{ route('books.download', $book) }}"
+                           class="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 text-xs font-bold px-3.5 py-2 rounded-xl transition">
+                            🔒 Inicia sesión para Descargar / Abrir
+                        </a>
+                    @endauth
                     <a href="{{ route('complaints.create', ['obra' => $book->titulo]) }}"
                        class="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-amber-300 text-xs font-semibold px-3.5 py-2 rounded-xl transition">
                         🚩 Reportar enlace roto o sugerir edición
@@ -220,14 +231,25 @@
     <p class="mt-1 text-xs text-slate-300">Busca esta obra en catálogos y bibliotecas digitales de acceso abierto. La disponibilidad depende de cada fuente.</p>
     <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         @foreach($enlacesLectura['fuentes'] as $fuente)
-            <a href="{{ $fuente['url'] }}" target="_blank" rel="noopener noreferrer"
-               class="group flex min-h-28 flex-col justify-between rounded-2xl border border-slate-700 bg-slate-950 p-4 text-slate-200 transition hover:-translate-y-0.5 hover:border-amber-400/60 hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400">
-                <span class="text-2xl" aria-hidden="true">{{ $fuente['icono'] }}</span>
-                <span>
-                    <span class="block text-sm font-extrabold text-white group-hover:text-amber-300">{{ $fuente['nombre'] }} ↗</span>
-                    <span class="mt-1 block text-[11px] text-slate-400">{{ $fuente['tipo'] }}</span>
-                </span>
-            </a>
+            @auth
+                <a href="{{ $fuente['url'] }}" target="_blank" rel="noopener noreferrer"
+                   class="group flex min-h-28 flex-col justify-between rounded-2xl border border-slate-700 bg-slate-950 p-4 text-slate-200 transition hover:-translate-y-0.5 hover:border-amber-400/60 hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    <span class="text-2xl" aria-hidden="true">{{ $fuente['icono'] }}</span>
+                    <span>
+                        <span class="block text-sm font-extrabold text-white group-hover:text-amber-300">{{ $fuente['nombre'] }} ↗</span>
+                        <span class="mt-1 block text-[11px] text-slate-400">{{ $fuente['tipo'] }}</span>
+                    </span>
+                </a>
+            @else
+                <a href="{{ route('books.read', $book) }}"
+                   class="group flex min-h-28 flex-col justify-between rounded-2xl border border-slate-700 bg-slate-950 p-4 text-slate-200 transition hover:-translate-y-0.5 hover:border-amber-400/60 hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    <span class="text-2xl" aria-hidden="true">{{ $fuente['icono'] }}</span>
+                    <span>
+                        <span class="block text-sm font-extrabold text-white group-hover:text-amber-300">{{ $fuente['nombre'] }} 🔒</span>
+                        <span class="mt-1 block text-[11px] text-slate-400">{{ $fuente['tipo'] }} · Requiere sesión</span>
+                    </span>
+                </a>
+            @endauth
         @endforeach
     </div>
 </section>
@@ -250,7 +272,7 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2 text-xs">
-            @if($book->esPdfEmbeddable())
+            @if(auth()->check() && $book->esPdfEmbeddable())
                 <button type="button" onclick="alternarModoLector('pdf')" id="btn-modo-pdf" class="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-950 font-black">📄 Visor PDF Real</button>
                 <button type="button" onclick="alternarModoLector('texto')" id="btn-modo-texto" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white font-bold border border-slate-700">📝 Modo Texto</button>
                 <span class="h-4 w-px bg-slate-700 mx-1"></span>
@@ -263,25 +285,44 @@
         </div>
     </div>
 
-    @if($book->esPdfEmbeddable())
-        <div id="lector-pdf-panel" class="mt-4">
-            <div class="rounded-2xl overflow-hidden border border-slate-800 bg-slate-900">
-                <iframe src="{{ $book->visor_embed_url ?? $book->archivo_pdf }}" title="Obra completa: {{ $book->titulo }}" class="w-full h-[480px] sm:h-[600px]"></iframe>
+    @auth
+        @if($book->esPdfEmbeddable())
+            <div id="lector-pdf-panel" class="mt-4">
+                <div class="rounded-2xl overflow-hidden border border-slate-800 bg-slate-900">
+                    <iframe src="{{ $book->visor_embed_url ?? $book->archivo_pdf }}" title="Obra completa: {{ $book->titulo }}" class="w-full h-[480px] sm:h-[600px]"></iframe>
+                </div>
+                <div class="mt-2 flex items-center justify-between gap-2">
+                    <a href="{{ route('books.read', $book) }}" class="text-xs font-bold text-sky-300 hover:underline">
+                        🖥️ Abrir en Sala de Lectura dedicada →
+                    </a>
+                    <a href="{{ $book->archivo_pdf }}" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-amber-400 hover:underline">
+                        Abrir en pantalla completa ↗
+                    </a>
+                </div>
             </div>
-            <div class="mt-2 flex justify-end">
-                <a href="{{ $book->archivo_pdf }}" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-amber-400 hover:underline">
-                    Abrir en pantalla completa ↗
+        @elseif($book->archivo_pdf)
+            <div class="mt-4 flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs">
+                <span class="text-slate-300">🔗 Edición digital externa disponible para referencia oficial</span>
+                <a href="{{ $book->archivo_pdf }}" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-400 hover:underline">Abrir enlace externo ↗</a>
+            </div>
+        @endif
+    @else
+        <div class="mt-4 rounded-2xl border border-amber-400/40 bg-slate-900/90 p-6 text-center space-y-3">
+            <p class="text-2xl">🔒</p>
+            <h3 class="text-base font-extrabold text-white">Inicia sesión para leer «{{ $book->titulo }}» completo</h3>
+            <p class="text-xs text-slate-300 max-w-lg mx-auto">
+                Regístrate o inicia sesión gratis para desbloquear la Sala de Lectura interactiva, las fuentes digitales directas y la descarga abierta. Mientras tanto puedes consultar abajo la muestra editorial.
+            </p>
+            <div class="flex flex-wrap justify-center gap-2.5 pt-1">
+                <a href="{{ route('books.read', $book) }}"
+                   class="bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-5 py-2.5 rounded-xl shadow transition">
+                    🔑 Iniciar Sesión para Leer Ahora →
                 </a>
             </div>
         </div>
-    @elseif($book->archivo_pdf)
-        <div class="mt-4 flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs">
-            <span class="text-slate-300">🔗 Edición digital externa disponible para referencia oficial</span>
-            <a href="{{ $book->archivo_pdf }}" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-400 hover:underline">Abrir enlace externo ↗</a>
-        </div>
-    @endif
+    @endauth
 
-    <div id="lector-texto-panel" class="{{ $book->esPdfEmbeddable() ? 'hidden' : '' }}">
+    <div id="lector-texto-panel" class="{{ (auth()->check() && $book->esPdfEmbeddable()) ? 'hidden' : '' }}">
         <div class="mt-4 max-w-3xl mx-auto">
             <div class="flex items-center justify-between text-[11px] text-slate-300 mb-1">
                 <span>Progreso de lectura previa</span>

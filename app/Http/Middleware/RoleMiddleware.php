@@ -17,7 +17,7 @@ class RoleMiddleware
 
             return redirect()
                 ->route($destino)
-                ->with('error', 'Acceso restringido: tu rol (' . ($user->rol ?? 'invitado') . ') no tiene permiso para acceder a esta sección.');
+                ->with('error', 'Acceso restringido: tu rol ('.($user->rol ?? 'invitado').') no tiene permiso para acceder a esta sección.');
         }
 
         return $next($request);

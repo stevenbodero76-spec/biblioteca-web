@@ -118,7 +118,25 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             'stock_disponible' => 1,
         ]);
 
+        $cliente = User::where('email', 'cliente@novaether.com')->firstOrFail();
+
         $this->get("/books/{$book->id}")
+            ->assertStatus(200)
+            ->assertSee('Inicia sesión para leer')
+            ->assertDontSee('<iframe', false);
+
+        $this->get(route('books.read', $book))->assertRedirect(route('login'));
+
+        $this->actingAs($cliente)
+            ->get(route('books.read', $book))
+            ->assertStatus(200)
+            ->assertSee('Sala de Lectura Exclusiva NOVAETHER™')
+            ->assertSee($readingUrl)
+            ->assertSee($authorRelatedBook->titulo)
+            ->assertSee($topicRelatedBook->titulo);
+
+        $this->actingAs($cliente)
+            ->get("/books/{$book->id}")
             ->assertStatus(200)
             ->assertSee('Lector NOVAETHER™')
             ->assertSee($readingUrl)
@@ -379,7 +397,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
     {
         $cliente = User::where('email', 'cliente@novaether.com')->firstOrFail();
         $karmaInicial = $cliente->reader->puntos_karma;
-        $book = Book::where('isbn', '978-0451524935')->firstOrFail(); // 1984 (sin reseña previa)
+        $book = Book::where('isbn', 'PD-SCIFI-1949')->firstOrFail(); // 1984 (sin reseña previa)
 
         $this->actingAs($cliente)
             ->post("/books/{$book->id}/reviews", [
@@ -406,7 +424,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
     public function test_client_can_toggle_favorites_and_view_estanteria(): void
     {
         $cliente = User::where('email', 'cliente@novaether.com')->firstOrFail();
-        $book = Book::where('isbn', '978-0451524935')->firstOrFail();
+        $book = Book::where('isbn', 'PD-SCIFI-1949')->firstOrFail();
 
         $this->actingAs($cliente)
             ->post("/books/{$book->id}/favorite")
@@ -495,7 +513,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $this->assertGreaterThanOrEqual(1, $ajaxCatalog->json('total'));
 
         $cliente = User::where('email', 'cliente@novaether.com')->firstOrFail();
-        $book = Book::where('isbn', '978-0451524935')->firstOrFail();
+        $book = Book::where('isbn', 'PD-SCIFI-1949')->firstOrFail();
 
         $this->actingAs($cliente)
             ->postJson("/books/{$book->id}/favorite")
@@ -612,11 +630,16 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $this->assertSame('prestado', $loan->estado);
     }
 
-    public function test_public_book_download_endpoint_streams_local_pdf_or_redirects_to_open_source(): void
+    public function test_authenticated_book_download_endpoint_streams_local_pdf_or_redirects_to_open_source(): void
     {
         $book = Book::firstOrFail();
+        $cliente = User::where('email', 'cliente@novaether.com')->firstOrFail();
 
         $this->get(route('books.download', $book))
+            ->assertRedirect(route('login'));
+
+        $this->actingAs($cliente)
+            ->get(route('books.download', $book))
             ->assertRedirect();
 
         Storage::fake('public');
@@ -634,7 +657,8 @@ class BibliotecaSecurityAndFlowTest extends TestCase
             'stock_disponible' => 2,
         ]);
 
-        $this->get(route('books.download', $localPdfBook))
+        $this->actingAs($cliente)
+            ->get(route('books.download', $localPdfBook))
             ->assertOk()
             ->assertDownload('manual-abierto-local.pdf');
     }
@@ -651,7 +675,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         ])->assertRedirect();
         $this->assertSame('resuelto', $complaint->fresh()->estado);
 
-        $this->actingAs($admin)->get('/admin/listas-espera')->assertStatus(200)->assertSee('La ciudad y los perros');
+        $this->actingAs($admin)->get('/admin/listas-espera')->assertStatus(200)->assertSee('Don Quijote de la Mancha');
 
         $review = Review::firstOrFail();
         $this->actingAs($admin)->get('/admin/resenas')->assertStatus(200);
@@ -714,7 +738,7 @@ class BibliotecaSecurityAndFlowTest extends TestCase
         $karmaBase = $cliente->reader->puntos_karma;
 
         // ReviewController no otorga karma de nuevo si el usuario borra y republica una reseña.
-        $bookSinResena = Book::where('isbn', '978-0451524935')->firstOrFail();
+        $bookSinResena = Book::where('isbn', 'PD-SCIFI-1949')->firstOrFail();
         $this->actingAs($cliente)->post("/books/{$bookSinResena->id}/reviews", [
             'rating' => 5,
             'comentario' => 'Primera opinión verificada en plataforma.',

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FavoriteController;
@@ -61,6 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('rol:admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+        Route::get('/admin/libros', [BookController::class, 'adminIndex'])->name('admin.books.index');
         Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
         Route::post('/books', [BookController::class, 'store'])->name('books.store');
         Route::get('/books/{book}/edit', [BookController::class, 'edit'])->name('books.edit');
@@ -74,6 +76,11 @@ Route::middleware('auth')->group(function () {
         Route::patch('/loans/{loan}/devolver', [LoanController::class, 'devolver'])->name('loans.devolver');
         Route::delete('/loans/{loan}', [LoanController::class, 'destroy'])->name('loans.destroy');
 
+        Route::get('/admin/categorias', [CategoryController::class, 'index'])->name('admin.categories.index');
+        Route::post('/admin/categorias', [CategoryController::class, 'store'])->name('admin.categories.store');
+        Route::put('/admin/categorias/{category}', [CategoryController::class, 'update'])->name('admin.categories.update');
+        Route::delete('/admin/categorias/{category}', [CategoryController::class, 'destroy'])->name('admin.categories.destroy');
+
         Route::get('/admin/reclamaciones', [ComplaintController::class, 'adminIndex'])->name('admin.complaints.index');
         Route::patch('/admin/reclamaciones/{complaint}', [ComplaintController::class, 'adminUpdate'])->name('admin.complaints.update');
         Route::get('/admin/listas-espera', [WaitlistController::class, 'adminIndex'])->name('admin.waitlists.index');
@@ -86,6 +93,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/loans/create', [LoanController::class, 'create'])->name('loans.create');
     Route::post('/loans', [LoanController::class, 'store'])->name('loans.store');
     Route::get('/loans/{loan}/ticket', [LoanController::class, 'ticket'])->name('loans.ticket');
+    Route::patch('/loans/{loan}/devolver-digital', [LoanController::class, 'devolver'])->name('loans.devolver-digital');
+    Route::patch('/loans/{loan}/renovar', [LoanController::class, 'renovar'])->name('loans.renovar');
 
     // Lista de Espera cuando stock == 0
     Route::post('/books/{book}/waitlist', [WaitlistController::class, 'store'])->name('waitlists.store');
@@ -96,10 +105,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/books/{book}/favorite', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
     Route::post('/books/{book}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+
+    // Lectura completa y descarga protegidas por sesión
+    Route::middleware('throttle:60,1')->group(function () {
+        Route::get('/books/{book}/leer', [BookController::class, 'read'])->name('books.read');
+        Route::get('/books/{book}/download', [BookController::class, 'download'])->name('books.download');
+    });
 });
 
-// Ficha detallada del libro + Visor Interactivo y Descarga Gratuita
+// Ficha pública informativa del libro (muestra y metadatos; lectura completa requiere sesión)
 Route::middleware('throttle:60,1')->group(function () {
-    Route::get('/books/{book}/download', [BookController::class, 'download'])->name('books.download');
     Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
 });

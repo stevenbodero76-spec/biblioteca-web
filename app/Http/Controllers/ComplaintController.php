@@ -27,7 +27,7 @@ class ComplaintController extends Controller
             'pedido_consumidor' => ['required', 'string', 'min:5', 'max:1000'],
         ]);
 
-        $codigo = 'LRC-' . date('Y') . '-' . strtoupper(Str::random(6));
+        $codigo = 'LRC-'.date('Y').'-'.strtoupper(Str::random(6));
 
         Complaint::create([
             ...$datos,

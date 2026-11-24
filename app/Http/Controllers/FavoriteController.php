@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\Favorite;
+use App\Services\BookLinkInterconnectorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,15 +12,18 @@ use Illuminate\View\View;
 
 class FavoriteController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, BookLinkInterconnectorService $interconnector): View
     {
         $books = $request->user()
             ->favoriteBooks()
             ->with('category')
-            ->withAvg('reviews', 'rating')
-            ->withCount('reviews')
+            ->withVisibleRatingStats()
             ->orderByDesc('favorites.created_at')
             ->paginate(12);
+
+        $books->getCollection()->each(function (Book $book) use ($interconnector) {
+            $book->setAttribute('fuentes_lectura', $interconnector->resolverEnlacesLectura($book, false)['fuentes']);
+        });
 
         $favoriteBookIds = $books->pluck('id')->all();
 
