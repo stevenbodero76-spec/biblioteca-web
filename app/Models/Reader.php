@@ -96,8 +96,8 @@ class Reader extends Model
     {
         return match ($this->tipo) {
             'estudiante' => 'Estudiante',
-            'docente' => 'Docente / Tech',
-            default => 'Público General',
+            'docente' => 'Docente',
+            default => 'Lector Público',
         };
     }
 

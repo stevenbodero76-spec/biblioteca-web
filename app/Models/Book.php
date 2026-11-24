@@ -17,6 +17,8 @@ class Book extends Model
         'editorial',
         'anio_publicacion',
         'formato',
+        'idioma',
+        'licencia',
         'sinopsis',
         'portada_url',
         'archivo_pdf',
@@ -68,6 +70,24 @@ class Book extends Model
     public function estaDisponible(): bool
     {
         return $this->stock_disponible > 0;
+    }
+
+    public function etiquetaIdioma(): string
+    {
+        return match ($this->idioma) {
+            'es' => 'Español',
+            'en' => 'Inglés',
+            default => 'Sin especificar',
+        };
+    }
+
+    public function etiquetaLicencia(): string
+    {
+        return match ($this->licencia) {
+            'dominio_publico' => 'Dominio Público',
+            'acceso_abierto' => 'Acceso Abierto',
+            default => 'Sin especificar',
+        };
     }
 
     public function prestamosActivosCount(): int
@@ -132,6 +152,8 @@ class Book extends Model
             })
             ->when($filtros['category_id'] ?? null, fn (Builder $q, $catId) => $q->where('category_id', $catId))
             ->when($filtros['formato'] ?? null, fn (Builder $q, $formato) => $q->where('formato', $formato))
+            ->when($filtros['idioma'] ?? null, fn (Builder $q, $idioma) => $q->where('idioma', $idioma))
+            ->when($filtros['licencia'] ?? null, fn (Builder $q, $licencia) => $q->where('licencia', $licencia))
             ->when($filtros['disponibilidad'] ?? null, function (Builder $q, string $disp) {
                 if ($disp === 'disponible') {
                     $q->where('stock_disponible', '>', 0);
@@ -145,7 +167,6 @@ class Book extends Model
     {
         return match ($orden) {
             'mejor_valorados' => $query->orderByDesc('reviews_avg_rating')->orderByDesc('reviews_count')->orderByDesc('id'),
-            'menor_precio' => $query->orderBy('precio_alquiler')->orderByDesc('id'),
             'mayor_stock' => $query->orderByDesc('stock_disponible')->orderByDesc('id'),
             default => $query->orderByDesc('id'),
         };

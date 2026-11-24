@@ -17,13 +17,11 @@ class ReaderController extends Controller
 {
     public function index(Request $request): View
     {
-        $filtros = $request->only(['buscar', 'tipo', 'plan_suscripcion', 'estado']);
+        $filtros = $request->only(['buscar', 'tipo', 'estado']);
 
         $readers = Reader::with('user')
             ->withCount([
-                'loans',
                 'loans as prestamos_activos_count' => fn ($q) => $q->whereIn('estado', ['prestado', 'vencido'])->where('estado_pago', '!=', 'anulado'),
-                'orders',
             ])
             ->filtro($filtros)
             ->orderBy('apellidos')
@@ -50,7 +48,7 @@ class ReaderController extends Controller
 
         DB::transaction(function () use ($datos, $clavePlana, $plan) {
             $user = User::create([
-                'name' => trim($datos['nombres'] . ' ' . $datos['apellidos']),
+                'name' => trim($datos['nombres'].' '.$datos['apellidos']),
                 'email' => $datos['email'],
                 'rol' => 'cliente',
                 'password' => Hash::make($clavePlana),
@@ -85,7 +83,7 @@ class ReaderController extends Controller
 
         return redirect()
             ->route('readers.index')
-            ->with('success', 'Cliente / lector registrado y sincronizado con cuenta de usuario.' . $infoClave);
+            ->with('success', 'Cliente / lector registrado y sincronizado con cuenta de usuario.'.$infoClave);
     }
 
     public function edit(Reader $reader): View
@@ -101,7 +99,7 @@ class ReaderController extends Controller
 
         DB::transaction(function () use ($datos, $reader) {
             $plan = $datos['plan_suscripcion'] ?? $reader->plan_suscripcion;
-            $nombreCompleto = trim($datos['nombres'] . ' ' . $datos['apellidos']);
+            $nombreCompleto = trim($datos['nombres'].' '.$datos['apellidos']);
 
             if ($reader->user) {
                 $userUpdates = [

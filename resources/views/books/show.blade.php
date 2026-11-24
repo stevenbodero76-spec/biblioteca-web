@@ -40,8 +40,8 @@
 <div class="bg-slate-900/95 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden mb-8">
     <div class="grid grid-cols-1 lg:grid-cols-12">
         <!-- Portada -->
-        <div class="lg:col-span-4 bg-gradient-to-br from-slate-950 to-slate-900 p-8 flex flex-col items-center justify-center text-white border-b lg:border-b-0 lg:border-r border-slate-800">
-            <div class="w-52 sm:w-60 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-400/30 bg-slate-900 flex items-center justify-center">
+        <div class="lg:col-span-4 bg-linear-to-br from-slate-950 to-slate-900 p-8 flex flex-col items-center justify-center text-white border-b lg:border-b-0 lg:border-r border-slate-800">
+            <div class="w-52 sm:w-60 aspect-2/3 rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-400/30 bg-slate-900 flex items-center justify-center">
                 @if($book->portada_url)
                     <img src="{{ $book->portada_url }}" alt="Portada de {{ $book->titulo }}" loading="lazy" class="w-full h-full object-cover"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -78,6 +78,14 @@
 
                     <span class="px-3 py-1 rounded-full text-xs font-extrabold uppercase bg-slate-800 text-slate-200 border border-slate-700">
                         Formato: {{ $book->formato }}
+                    </span>
+
+                    <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-sky-500/15 text-sky-200 border border-sky-500/30">
+                        {{ $book->idioma === 'es' ? '🇪🇸' : ($book->idioma === 'en' ? '🇬🇧' : '🌐') }} {{ $book->etiquetaIdioma() }}
+                    </span>
+
+                    <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-violet-500/15 text-violet-200 border border-violet-500/30">
+                        ⚖️ {{ $book->etiquetaLicencia() }}
                     </span>
 
                     @if($book->reviews_count > 0)
@@ -143,12 +151,12 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     @if($book->archivo_pdf)
                         <a href="#visor-virtual"
-                           class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm px-5 py-3 rounded-xl shadow-lg shadow-amber-500/20 transition">
+                           class="inline-flex items-center justify-center gap-2 bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm px-5 py-3 rounded-xl shadow-lg shadow-amber-500/20 transition">
                             📖 Leer Obra Completa Ahora
                         </a>
                     @else
                         <a href="#visor-virtual"
-                           class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm px-5 py-3 rounded-xl shadow-lg shadow-amber-500/20 transition">
+                           class="inline-flex items-center justify-center gap-2 bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm px-5 py-3 rounded-xl shadow-lg shadow-amber-500/20 transition">
                             📖 Ver Muestra de Lectura
                         </a>
                     @endif
@@ -199,11 +207,15 @@
 <section class="mb-8 rounded-3xl border border-slate-800 bg-slate-900/90 p-6 sm:p-8 shadow-xl" aria-labelledby="open-reading-sources-title">
     <h2 id="open-reading-sources-title" class="text-lg font-extrabold text-white">📚 Fuentes abiertas interconectadas</h2>
     <p class="mt-1 text-xs text-slate-300">Busca esta obra en catálogos y bibliotecas digitales de acceso abierto. La disponibilidad depende de cada fuente.</p>
-    <div class="mt-4 flex flex-wrap gap-3">
+    <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         @foreach($enlacesLectura['fuentes'] as $fuente)
             <a href="{{ $fuente['url'] }}" target="_blank" rel="noopener noreferrer"
-               class="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-xs font-bold text-amber-300 transition hover:border-amber-400/60 hover:text-amber-200">
-                {{ $fuente['nombre'] }} ↗
+               class="group flex min-h-28 flex-col justify-between rounded-2xl border border-slate-700 bg-slate-950 p-4 text-slate-200 transition hover:-translate-y-0.5 hover:border-amber-400/60 hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                <span class="text-2xl" aria-hidden="true">{{ $fuente['icono'] }}</span>
+                <span>
+                    <span class="block text-sm font-extrabold text-white group-hover:text-amber-300">{{ $fuente['nombre'] }} ↗</span>
+                    <span class="mt-1 block text-[11px] text-slate-400">{{ $fuente['tipo'] }}</span>
+                </span>
             </a>
         @endforeach
     </div>
@@ -230,7 +242,7 @@
             @if($book->esPdfEmbeddable())
                 <button type="button" onclick="alternarModoLector('pdf')" id="btn-modo-pdf" class="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-950 font-black">📄 Visor PDF Real</button>
                 <button type="button" onclick="alternarModoLector('texto')" id="btn-modo-texto" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white font-bold border border-slate-700">📝 Modo Texto</button>
-                <span class="h-4 w-[1px] bg-slate-700 mx-1"></span>
+                <span class="h-4 w-px bg-slate-700 mx-1"></span>
             @endif
             <button type="button" onclick="cambiarTamanoFuente(-1)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-white font-bold border border-slate-700">A-</button>
             <button type="button" onclick="cambiarTamanoFuente(1)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-white font-bold border border-slate-700">A+</button>
@@ -341,8 +353,8 @@
             @foreach($relacionados as $rel)
                 <a href="{{ route('books.show', $rel) }}" class="relative flex gap-3 rounded-2xl border border-slate-800 bg-slate-950 p-4 shadow-lg transition hover:border-amber-400/60">
                     <span class="absolute -left-[1.32rem] top-7 w-5 border-t border-amber-400/40 sm:hidden" aria-hidden="true"></span>
-                    <span class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-amber-400/40 bg-amber-400/10 text-xs font-black text-amber-300 sm:hidden" aria-hidden="true">{{ $loop->iteration }}</span>
-                    <div class="h-24 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-slate-900">
+                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-amber-400/40 bg-amber-400/10 text-xs font-black text-amber-300 sm:hidden" aria-hidden="true">{{ $loop->iteration }}</span>
+                    <div class="h-24 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-900">
                         @if($rel->portada_url)
                             <img src="{{ $rel->portada_url }}" alt="Portada de {{ $rel->titulo }}" loading="lazy" class="h-full w-full object-cover">
                         @else

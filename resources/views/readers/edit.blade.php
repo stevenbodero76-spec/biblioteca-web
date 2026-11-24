@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Editar Cliente · NOVAETHER™')
+@section('title', 'Editar Lector · NOVAETHER™')
 
 @section('content')
 <div class="max-w-2xl mx-auto">
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-extrabold text-white">✏️ Editar Cliente / Lector</h1>
-            <p class="text-sm text-slate-300">{{ $reader->nombre_completo }} · Sincronizado con acceso web</p>
+            <h1 class="text-2xl font-extrabold text-white">✏️ Editar Lector</h1>
+            <p class="text-sm text-slate-300">{{ $reader->nombre_completo }} · Cuenta web sincronizada</p>
         </div>
         <a href="{{ route('readers.index') }}" class="text-xs font-extrabold uppercase text-amber-400 hover:underline">← Volver</a>
     </div>
@@ -54,27 +54,12 @@
             </div>
 
             <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Plan Suscripción *</label>
-                <select name="plan_suscripcion" class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
-                    <option value="free" @selected(old('plan_suscripcion', $reader->plan_suscripcion) === 'free')>Lector Free</option>
-                    <option value="estudiante" @selected(old('plan_suscripcion', $reader->plan_suscripcion) === 'estudiante')>Plan Estudiante</option>
-                    <option value="pro" @selected(old('plan_suscripcion', $reader->plan_suscripcion) === 'pro')>Club NovaEther Pro</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Segmento *</label>
+                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Categoría de lector *</label>
                 <select name="tipo" required class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
-                    <option value="publico" @selected(old('tipo', $reader->tipo) === 'publico')>Público General</option>
+                    <option value="publico" @selected(old('tipo', $reader->tipo) === 'publico')>Lector Público</option>
                     <option value="estudiante" @selected(old('tipo', $reader->tipo) === 'estudiante')>Estudiante</option>
-                    <option value="docente" @selected(old('tipo', $reader->tipo) === 'docente')>Docente / Tech</option>
+                    <option value="docente" @selected(old('tipo', $reader->tipo) === 'docente')>Docente</option>
                 </select>
-            </div>
-
-            <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">Vencimiento del Plan</label>
-                <input type="date" name="plan_vence_at" value="{{ old('plan_vence_at', $reader->plan_vence_at?->toDateString()) }}"
-                       class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
             </div>
 
             <div>
@@ -88,8 +73,8 @@
 
         <div class="pt-3 flex justify-end gap-2">
             <a href="{{ route('readers.index') }}" class="px-4 py-2.5 rounded-xl border border-slate-700 text-xs font-bold text-slate-200 hover:bg-slate-800">Cancelar</a>
-            <button type="submit" class="bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-6 py-2.5 rounded-xl shadow-lg">
-                💾 Actualizar y Sincronizar
+            <button type="submit" class="bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-6 py-2.5 rounded-xl shadow-lg">
+                💾 Guardar Cambios
             </button>
         </div>
     </form>

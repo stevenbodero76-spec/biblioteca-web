@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BookRequest;
 use App\Models\Book;
 use App\Models\Category;
+use App\Models\User;
 use App\Services\BookLinkInterconnectorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -17,9 +18,9 @@ use Illuminate\View\View;
 
 class BookController extends Controller
 {
-    public function index(Request $request): View|JsonResponse
+    public function index(Request $request, BookLinkInterconnectorService $interconnector): View|JsonResponse
     {
-        $filtros = $request->only(['buscar', 'category_id', 'formato', 'disponibilidad', 'orden']);
+        $filtros = $request->only(['buscar', 'category_id', 'formato', 'idioma', 'licencia', 'disponibilidad', 'orden']);
 
         $books = Book::with('category')
             ->withAvg(['reviews' => fn ($q) => $q->where('visible', true)], 'rating')
@@ -29,9 +30,13 @@ class BookController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        $favoriteBookIds = Auth::check()
-            ? Auth::user()->favorites()->pluck('book_id')->all()
-            : [];
+        $books->getCollection()->each(function (Book $book) use ($interconnector) {
+            $book->setAttribute('fuentes_lectura', $interconnector->resolverEnlacesLectura($book)['fuentes']);
+        });
+
+        /** @var User|null $user */
+        $user = Auth::user();
+        $favoriteBookIds = $user?->favorites()->pluck('book_id')->all() ?? [];
 
         if ($request->ajax() || $request->boolean('partial')) {
             $html = view('books.partials.grid', compact('books', 'favoriteBookIds', 'filtros'))->render();
@@ -85,7 +90,9 @@ class BookController extends Controller
 
     public function show(Book $book, BookLinkInterconnectorService $interconnector): View
     {
-        $esAdmin = Auth::check() && Auth::user()->esAdmin();
+        /** @var User|null $user */
+        $user = Auth::user();
+        $esAdmin = $user?->esAdmin() ?? false;
 
         $book->load([
             'category',
@@ -118,32 +125,12 @@ class BookController extends Controller
                 ->value('fecha_devolucion_esperada')
             : null;
 
-        $terminoBusqueda = rawurlencode(trim($book->titulo.' '.$book->autor));
-        $tituloBusqueda = rawurlencode($book->titulo);
-        $enlacesLectura = [
-            'fuentes' => [
-                [
-                    'nombre' => 'Open Library',
-                    'url' => "https://openlibrary.org/search?q={$terminoBusqueda}",
-                ],
-                [
-                    'nombre' => 'Internet Archive',
-                    'url' => "https://archive.org/search?query={$terminoBusqueda}",
-                ],
-                [
-                    'nombre' => 'Project Gutenberg',
-                    'url' => "https://www.gutenberg.org/ebooks/search/?query={$tituloBusqueda}",
-                ],
-            ],
-        ];
-
         $miWaitlist = null;
         $miPosicionCola = null;
         $esFavorito = false;
         $miResena = null;
 
-        if (Auth::check()) {
-            $user = Auth::user();
+        if ($user) {
             $esFavorito = $user->favorites()->where('book_id', $book->id)->exists();
             $miResena = $book->reviews()->where('user_id', $user->id)->first();
 
@@ -168,7 +155,6 @@ class BookController extends Controller
             'enlacesLectura',
             'waitlistCount',
             'proximaDevolucion',
-            'enlacesLectura',
             'miWaitlist',
             'miPosicionCola',
             'esFavorito',
@@ -321,28 +307,20 @@ class BookController extends Controller
 
         if ($request->hasFile('portada_file')) {
             $path = $request->file('portada_file')->store('covers', 'public');
-<<<<<<< HEAD
             $datos['portada_url'] = '/storage/'.ltrim($path, '/');
-=======
-            $datos['portada_url'] = '/storage/' . ltrim($path, '/');
             if ($book) {
                 $this->eliminarArchivoPublicoSiLocal($book->portada_url);
             }
->>>>>>> 6d8c502ff5b9138e3c2a623d4939551d091c89e4
         } elseif ($book && empty($datos['portada_url'])) {
             $datos['portada_url'] = $book->portada_url;
         }
 
         if ($request->hasFile('pdf_file')) {
             $path = $request->file('pdf_file')->store('pdfs', 'public');
-<<<<<<< HEAD
             $datos['archivo_pdf'] = '/storage/'.ltrim($path, '/');
-=======
-            $datos['archivo_pdf'] = '/storage/' . ltrim($path, '/');
             if ($book) {
                 $this->eliminarArchivoPublicoSiLocal($book->archivo_pdf);
             }
->>>>>>> 6d8c502ff5b9138e3c2a623d4939551d091c89e4
         } elseif ($book && empty($datos['archivo_pdf'])) {
             $datos['archivo_pdf'] = $book->archivo_pdf;
         }

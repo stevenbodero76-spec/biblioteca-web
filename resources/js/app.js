@@ -116,6 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const catInput = document.getElementById('live-category-input');
     const ordenSelect = document.getElementById('live-orden-select');
     const formatoSelect = document.getElementById('live-formato-select');
+    const idiomaSelect = document.getElementById('live-idioma-select');
+    const licenciaSelect = document.getElementById('live-licencia-select');
     const stockSelect = document.getElementById('live-stock-select');
     const resetBtn = document.getElementById('live-reset-btn');
 
@@ -142,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
             debounceTimer = setTimeout(ejecutarFiltroVivo, 280);
         });
 
-        [ordenSelect, formatoSelect, stockSelect].forEach((sel) => {
+        [ordenSelect, formatoSelect, idiomaSelect, licenciaSelect, stockSelect].forEach((sel) => {
             sel?.addEventListener('change', ejecutarFiltroVivo);
         });
 
@@ -170,6 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (catInput) catInput.value = '';
             if (ordenSelect) ordenSelect.value = '';
             if (formatoSelect) formatoSelect.value = '';
+            if (idiomaSelect) idiomaSelect.value = '';
+            if (licenciaSelect) licenciaSelect.value = '';
             if (stockSelect) stockSelect.value = '';
             document.querySelector('.js-cat-chip[data-quick-cat=""]')?.click();
         });
@@ -251,6 +255,8 @@ function abrirQuickView(book) {
     document.getElementById('qv-autor').textContent = `Autor: ${book.autor || ''} · ${book.editorial || ''} (${book.anio || ''})`;
     document.getElementById('qv-rating').textContent = book.rating_texto || '';
     document.getElementById('qv-formato').textContent = book.formato || '';
+    document.getElementById('qv-idioma').textContent = book.idioma || '';
+    document.getElementById('qv-licencia').textContent = book.licencia || '';
     document.getElementById('qv-sinopsis').textContent = book.sinopsis || '';
 
     const stockEl = document.getElementById('qv-stock');
@@ -259,9 +265,9 @@ function abrirQuickView(book) {
         ? 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
         : 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-200 border border-rose-500/40';
 
-    const reserveLink = document.getElementById('qv-reserve-link');
-    reserveLink.href = book.disponible ? (book.reserve_url || '#') : (book.show_url || '#');
-    reserveLink.textContent = book.disponible ? '🔥 Alquilar / QR' : '🔔 Lista de Espera';
+    const readLink = document.getElementById('qv-read-link');
+    readLink.href = book.read_url || book.show_url || '#';
+    readLink.textContent = '📖 Leer / Abrir';
 
     document.getElementById('qv-show-link').href = book.show_url || '#';
 

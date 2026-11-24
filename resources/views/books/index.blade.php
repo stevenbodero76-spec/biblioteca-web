@@ -5,7 +5,7 @@
 @section('content')
 
 <!-- HERO EDITORIAL -->
-<div class="relative rounded-3xl bg-gradient-to-br from-slate-900 via-[#0C1220] to-slate-950 text-white overflow-hidden shadow-2xl border border-slate-800 mb-8">
+<div class="relative rounded-3xl bg-linear-to-br from-slate-900 via-[#0C1220] to-slate-950 text-white overflow-hidden shadow-2xl border border-slate-800 mb-8">
     <div class="absolute -top-28 -right-24 w-96 h-96 rounded-full bg-amber-500/15 blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-28 -left-24 w-96 h-96 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none"></div>
 
@@ -14,7 +14,7 @@
             <div class="lg:col-span-7 space-y-5">
                 <div class="flex flex-wrap items-center gap-2">
                     <span class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-400/15 border border-amber-400/40 text-amber-300 text-xs font-extrabold uppercase tracking-wider">
-                        Stock Real Garantizado · Manga · Bestsellers · Tech
+                        Lectura abierta · Manga · Clásicos · Tech
                     </span>
                     @guest
                         <a href="{{ route('register') }}" class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-200 hover:border-amber-400 hover:text-amber-300 text-xs font-extrabold transition">
@@ -24,11 +24,11 @@
                 </div>
 
                 <h1 class="font-serif-editorial text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.12]">
-                    Reserva Hoy y Empieza a Leer al Instante en <span class="text-amber-400">NOVAETHER™</span>
+                    Descubre y abre tu próxima lectura en <span class="text-amber-400">NOVAETHER™</span>
                 </h1>
 
                 <p class="text-slate-300 text-sm sm:text-base max-w-2xl leading-relaxed">
-                    Sin esperas de semanas ni quiebres de stock fantasma. Explora mangas coleccionistas, bestsellers y libros de ingeniería con Ticket QR inmediato y visor interactivo integrado.
+                    Explora el catálogo, filtra por idioma y licencia, y accede a bibliotecas digitales abiertas desde cada obra. La disponibilidad depende de cada fuente.
                 </p>
 
                 <!-- Buscador rápido sincronizado con el filtro en vivo -->
@@ -38,8 +38,8 @@
                                placeholder="Busca al instante por título, autor, ISBN, One Piece, Batman, Dune..."
                                class="flex-1 bg-transparent px-4 py-2.5 text-sm text-white placeholder-slate-400 focus:outline-none">
                         <button type="submit"
-                                class="bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm px-6 py-3 rounded-xl transition shadow-lg">
-                            Explorar Ahora
+                                class="bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-sm px-6 py-3 rounded-xl transition shadow-lg">
+                            Explorar lecturas
                         </button>
                     </div>
                 </form>
@@ -86,7 +86,7 @@
                     <p class="text-xs text-slate-300 mt-0.5">Unidades listas para entrega</p>
                 </div>
 
-                <div class="bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-400/40 p-5 rounded-2xl flex flex-col justify-between">
+                <div class="bg-linear-to-br from-amber-500/20 to-orange-500/10 border border-amber-400/40 p-5 rounded-2xl flex flex-col justify-between">
                     <div>
                         <span class="text-xs font-black uppercase text-amber-300">Karma Lector</span>
                         <p class="text-sm font-extrabold text-white mt-1">+25 pts por devolución puntual</p>
@@ -97,7 +97,7 @@
                         </a>
                     @else
                         <a href="{{ route('loans.index') }}" class="mt-3 inline-block text-center bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 text-xs font-bold py-1.5 px-3 rounded-xl transition">
-                            Ver Mis Reservas →
+                            Ver Mis Préstamos →
                         </a>
                     @endguest
                 </div>
@@ -107,7 +107,7 @@
 </div>
 
 <!-- VITRINA DINÁMICA CON PESTAÑAS INTERACTIVAS -->
-@if(empty($filtros['buscar']) && empty($filtros['category_id']) && empty($filtros['formato']) && empty($filtros['disponibilidad']))
+@if(empty($filtros['buscar']) && empty($filtros['category_id']) && empty($filtros['formato']) && empty($filtros['idioma']) && empty($filtros['licencia']) && empty($filtros['disponibilidad']))
 <div class="mb-10 bg-slate-900/90 rounded-3xl p-6 sm:p-8 text-white shadow-2xl border border-slate-800">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
@@ -138,7 +138,7 @@
                 <a href="{{ route('books.show', $item) }}"
                    class="group bg-slate-950/80 hover:bg-slate-950 border border-slate-800 hover:border-amber-400/70 rounded-2xl p-3.5 flex flex-col justify-between transition duration-300 shadow-lg">
                     <div>
-                        <div class="aspect-[2/3] w-full rounded-xl overflow-hidden bg-slate-900 mb-3 relative shadow-md">
+                        <div class="aspect-2/3 w-full rounded-xl overflow-hidden bg-slate-900 mb-3 relative shadow-md">
                             @if($item->portada_url)
                                 <img src="{{ $item->portada_url }}" alt="Portada de {{ $item->titulo }}"
                                      class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
@@ -185,7 +185,7 @@
         <h2 class="text-xs font-black uppercase tracking-widest text-amber-400">Explorar Catálogo por Categoría</h2>
         @auth
             @if(auth()->user()->esAdmin())
-                <a href="{{ route('books.create') }}" class="bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2 rounded-xl shadow transition">
+                <a href="{{ route('books.create') }}" class="bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 text-xs font-black px-4 py-2 rounded-xl shadow transition">
                     ➕ Publicar Nuevo Libro / Cómic
                 </a>
             @endif
@@ -256,8 +256,31 @@
                 <select id="live-orden-select" name="orden" class="appearance-none w-full h-10 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
                     <option value="">Más recientes</option>
                     <option value="mejor_valorados" @selected(($filtros['orden'] ?? '') === 'mejor_valorados')>Mejor valorados</option>
-                    <option value="menor_precio" @selected(($filtros['orden'] ?? '') === 'menor_precio')>Menor precio alquiler</option>
                     <option value="mayor_stock" @selected(($filtros['orden'] ?? '') === 'mayor_stock')>Mayor disponibilidad</option>
+                </select>
+                <svg class="w-4 h-4 text-slate-400 pointer-events-none absolute right-2.5 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2">
+            <label for="live-idioma-select" class="block text-[11px] font-extrabold uppercase text-slate-300 mb-1.5">Idioma</label>
+            <div class="relative">
+                <select id="live-idioma-select" name="idioma" class="appearance-none w-full h-10 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
+                    <option value="">Todos los idiomas</option>
+                    <option value="es" @selected(($filtros['idioma'] ?? '') === 'es')>🇪🇸 Español</option>
+                    <option value="en" @selected(($filtros['idioma'] ?? '') === 'en')>🇬🇧 Inglés</option>
+                </select>
+                <svg class="w-4 h-4 text-slate-400 pointer-events-none absolute right-2.5 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2">
+            <label for="live-licencia-select" class="block text-[11px] font-extrabold uppercase text-slate-300 mb-1.5">Licencia</label>
+            <div class="relative">
+                <select id="live-licencia-select" name="licencia" class="appearance-none w-full h-10 rounded-xl bg-slate-950 border border-slate-700 pl-3 pr-8 text-xs font-semibold text-white focus:border-amber-400 focus:outline-none">
+                    <option value="">Todas las licencias</option>
+                    <option value="dominio_publico" @selected(($filtros['licencia'] ?? '') === 'dominio_publico')>Dominio Público</option>
+                    <option value="acceso_abierto" @selected(($filtros['licencia'] ?? '') === 'acceso_abierto')>Acceso Abierto</option>
                 </select>
                 <svg class="w-4 h-4 text-slate-400 pointer-events-none absolute right-2.5 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
             </div>

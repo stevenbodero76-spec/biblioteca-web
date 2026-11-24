@@ -20,7 +20,7 @@ class BookLinkInterconnectorService
     public function resolverEnlacesLectura(Book $book): array
     {
         $cleanIsbn = preg_replace('/[^0-9Xx]/', '', (string) $book->isbn);
-        $queryTituloAutor = urlencode(trim($book->titulo . ' ' . $book->autor));
+        $queryTituloAutor = urlencode(trim($book->titulo.' '.$book->autor));
         $queryTitulo = urlencode(trim($book->titulo));
 
         $openLibraryUrl = $cleanIsbn !== ''
@@ -29,9 +29,7 @@ class BookLinkInterconnectorService
 
         $internetArchiveUrl = "https://archive.org/details/texts?tab=collection&query={$queryTituloAutor}";
         $gutenbergUrl = "https://www.gutenberg.org/ebooks/search/?query={$queryTitulo}";
-        $googleBooksUrl = $cleanIsbn !== ''
-            ? "https://www.google.com/search?tbm=bks&q=isbn:{$cleanIsbn}"
-            : "https://www.google.com/search?tbm=bks&q={$queryTituloAutor}";
+        $cervantesUrl = "https://www.cervantesvirtual.com/buscador/?q={$queryTitulo}";
 
         $principalUrl = trim((string) $book->archivo_pdf) !== ''
             ? (string) $book->archivo_pdf
@@ -44,47 +42,36 @@ class BookLinkInterconnectorService
 
         $fuentes = [
             [
-                'nombre' => 'Open Library · Lectura Abierta',
+                'nombre' => 'Open Library',
                 'tipo' => 'Lectura Digital / Préstamo Público',
                 'url' => $openLibraryUrl,
                 'icono' => '📖',
             ],
             [
-                'nombre' => 'Internet Archive · Bóveda de Textos',
+                'nombre' => 'Internet Archive',
                 'tipo' => 'Visor de Páginas Completas',
                 'url' => $internetArchiveUrl,
                 'icono' => '🏛️',
             ],
             [
-                'nombre' => 'Project Gutenberg · Dominio Público',
+                'nombre' => 'Project Gutenberg',
                 'tipo' => 'Texto Completo / EPUB / HTML',
                 'url' => $gutenbergUrl,
                 'icono' => '🌐',
             ],
             [
-                'nombre' => 'Google Books · Vista Previa',
-                'tipo' => 'Fragmentos y Capítulos',
-                'url' => $googleBooksUrl,
-                'icono' => '🔎',
-            ],
-        ];
-
-        $categoriaNombre = mb_strtolower($book->category?->nombre ?? '');
-        if (str_contains($categoriaNombre, 'cómic') || str_contains($categoriaNombre, 'manga')) {
-            array_unshift($fuentes, [
-                'nombre' => 'MangaPlus · Lectura Oficial',
+                'nombre' => 'MangaPlus',
                 'tipo' => 'Capítulos Digitales Gratuitos',
                 'url' => str_contains($principalUrl, 'mangaplus') ? $principalUrl : 'https://mangaplus.shueisha.co.jp/',
                 'icono' => '🎌',
-            ]);
-        } elseif (str_contains($categoriaNombre, 'literatura') || str_contains($categoriaNombre, 'historia')) {
-            $fuentes[] = [
-                'nombre' => 'Biblioteca Virtual Miguel de Cervantes',
+            ],
+            [
+                'nombre' => 'Cervantes Virtual',
                 'tipo' => 'Clásicos en Español',
-                'url' => "https://www.cervantesvirtual.com/buscador/?q={$queryTitulo}",
+                'url' => $cervantesUrl,
                 'icono' => '🖋️',
-            ];
-        }
+            ],
+        ];
 
         return [
             'principal_url' => $principalUrl,
@@ -132,11 +119,11 @@ class BookLinkInterconnectorService
                 ],
                 [
                     'nombre' => 'Internet Archive',
-                    'url' => 'https://archive.org/details/texts?tab=collection&query=' . urlencode($titulo ?: $cleanIsbn),
+                    'url' => 'https://archive.org/details/texts?tab=collection&query='.urlencode($titulo ?: $cleanIsbn),
                 ],
                 [
                     'nombre' => 'Project Gutenberg',
-                    'url' => 'https://www.gutenberg.org/ebooks/search/?query=' . urlencode($titulo ?: $cleanIsbn),
+                    'url' => 'https://www.gutenberg.org/ebooks/search/?query='.urlencode($titulo ?: $cleanIsbn),
                 ],
             ],
         ];
@@ -149,7 +136,7 @@ class BookLinkInterconnectorService
             return "https://openlibrary.org/isbn/{$cleanIsbn}";
         }
 
-        return 'https://openlibrary.org/search?q=' . urlencode($titulo);
+        return 'https://openlibrary.org/search?q='.urlencode($titulo);
     }
 
     /**
@@ -189,7 +176,7 @@ class BookLinkInterconnectorService
                     $score += 30;
                 }
                 foreach ($palabrasClave as $palabra) {
-                    if (str_contains(mb_strtolower($item->titulo . ' ' . $item->sinopsis), $palabra)) {
+                    if (str_contains(mb_strtolower($item->titulo.' '.$item->sinopsis), $palabra)) {
                         $score += 10;
                     }
                 }
